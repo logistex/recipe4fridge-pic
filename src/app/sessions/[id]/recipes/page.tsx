@@ -31,7 +31,7 @@ export default async function RecipesPage({
 
   const theme = profile.theme;
 
-  let { data: latestRequest } = await supabase
+  const { data: latestRequest } = await supabase
     .from("recipe_requests")
     .select("id, cuisine_override, spice_override, difficulty_override, time_override, text_provider")
     .eq("session_id", id)
@@ -46,14 +46,10 @@ export default async function RecipesPage({
     if (result?.error) {
       generationError = result.error;
     } else {
-      const { data: fresh } = await supabase
-        .from("recipe_requests")
-        .select("id, cuisine_override, spice_override, difficulty_override, time_override, text_provider")
-        .eq("session_id", id)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      latestRequest = fresh;
+      // 생성 직후 같은 렌더 안에서 다시 조회하는 대신, 다른 조건 재요청 흐름과 똑같이
+      // redirect로 완전히 새로운 요청을 발생시킨다. 방금 만든 recipe_requests/recipes를
+      // 안정적으로 반영된 상태에서 읽어오기 위함이다.
+      redirect(`/sessions/${id}/recipes`);
     }
   }
 
