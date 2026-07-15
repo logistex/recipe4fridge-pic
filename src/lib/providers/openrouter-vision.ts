@@ -4,12 +4,20 @@ import { chatJsonWithFallback, OpenRouterError } from "./openrouter-client";
 // OpenRouter 무료 티어 모델은 라인업이 자주 바뀐다 (docs/PRD.md 7.1).
 // 1순위 모델을 환경변수로 지정할 수 있고, 이 목록의 나머지는 자동 대체(fallback) 후보다.
 // 1순위 호출이 실패하면(모델 사라짐, 일시 한도 초과 등) 코드 수정 없이 다음 후보로 자동 전환된다.
+//
+// 2026-07-15 실사용 테스트에서 qwen2.5-vl-72b/32b, gemini-2.0-flash-exp가 전부
+// "No endpoints found"(404)로 죽어있던 것을 확인 — 잘 알려진 인기 모델일수록
+// 무료 엔드포인트가 먼저 막히는 경향이 있어, 상대적으로 덜 알려진 모델을 앞쪽 우선순위로 배치했다.
+// 마지막 openrouter/free는 OpenRouter가 그 순간 살아있는 무료 모델 중 하나를
+// 자동으로 골라주는 라우터라 최후의 안전망으로 추가했다 (nvidia rerank/embed VL,
+// content-safety, lyria 계열은 채팅형 이미지 인식에 안 맞는 모델이라 후보에서 제외).
 const PRIMARY_MODEL =
-  process.env.OPENROUTER_VISION_MODEL || "qwen/qwen2.5-vl-72b-instruct:free";
+  process.env.OPENROUTER_VISION_MODEL || "nvidia/nemotron-nano-12b-v2-vl:free";
 const FALLBACK_MODELS = [
-  "qwen/qwen2.5-vl-32b-instruct:free",
-  "meta-llama/llama-3.2-11b-vision-instruct:free",
-  "google/gemini-2.0-flash-exp:free",
+  "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+  "google/gemma-4-26b-a4b-it:free",
+  "google/gemma-4-31b-it:free",
+  "openrouter/free",
 ];
 const MODEL_CANDIDATES = [PRIMARY_MODEL, ...FALLBACK_MODELS];
 

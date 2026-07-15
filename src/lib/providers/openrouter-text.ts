@@ -2,12 +2,21 @@ import type { TextProvider, RecipeResult } from "./types";
 import { chatJsonWithFallback, OpenRouterError } from "./openrouter-client";
 
 // 1순위 모델은 환경변수로 지정 가능, 나머지는 자동 대체(fallback) 후보 (docs/PRD.md 7.1).
+//
+// 2026-07-15 실사용 테스트에서 llama-3.1-8b/qwen-2.5-72b/gemini-2.0-flash-exp 후보가
+// 이미 OpenRouter 무료 목록에서 빠져있는 것을 확인 — 잘 알려진 인기 모델일수록 무료
+// 엔드포인트가 먼저 막히는 경향이 있어, 상대적으로 덜 알려진 모델을 앞쪽 우선순위로
+// 배치했다. llama-3.3-70b는 여전히 살아있는 걸 확인해 안전한 후순위로 남겨뒀고,
+// 마지막 openrouter/free는 그 순간 살아있는 무료 모델 중 하나를 OpenRouter가
+// 자동으로 골라주는 라우터라 최후의 안전망으로 추가했다.
 const PRIMARY_MODEL =
-  process.env.OPENROUTER_TEXT_MODEL || "meta-llama/llama-3.3-70b-instruct:free";
+  process.env.OPENROUTER_TEXT_MODEL || "nvidia/nemotron-3-super-120b-a12b:free";
 const FALLBACK_MODELS = [
-  "meta-llama/llama-3.1-8b-instruct:free",
-  "qwen/qwen-2.5-72b-instruct:free",
-  "google/gemini-2.0-flash-exp:free",
+  "qwen/qwen3-next-80b-a3b-instruct:free",
+  "cognitivecomputations/dolphin-mistral-24b-venice-edition:free",
+  "nousresearch/hermes-3-llama-3.1-405b:free",
+  "meta-llama/llama-3.3-70b-instruct:free",
+  "openrouter/free",
 ];
 const MODEL_CANDIDATES = [PRIMARY_MODEL, ...FALLBACK_MODELS];
 

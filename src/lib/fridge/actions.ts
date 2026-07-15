@@ -59,20 +59,19 @@ export async function createFridgeSession(input: {
   const { error: imagesError } = await supabase.from("fridge_images").insert(imageRows);
   if (imagesError) throw new Error(imagesError.message);
 
-  // mock provider는 URL 내용을 안 보지만, 실제 API(OpenRouter 등)는 이미지를 직접 가져와야 하므로
-  // 비공개 버킷 경로 대신 짧게 유효한 서명된 URL을 만들어 전달한다.
-  const signedUrls = await Promise.all(
-    input.images.map(async (img) => {
-      const { data, error } = await supabase.storage
-        .from("fridge-images")
-        .createSignedUrl(img.path, 300);
-      if (error || !data) throw new Error("이미지 URL을 만들지 못했어요.");
-      return data.signedUrl;
-    })
-  );
-
   let detected;
   try {
+    // mock provider는 URL 내용을 안 보지만, 실제 API(OpenRouter 등)는 이미지를 직접 가져와야 하므로
+    // 비공개 버킷 경로 대신 짧게 유효한 서명된 URL을 만들어 전달한다.
+    const signedUrls = await Promise.all(
+      input.images.map(async (img) => {
+        const { data, error } = await supabase.storage
+          .from("fridge-images")
+          .createSignedUrl(img.path, 300);
+        if (error || !data) throw new Error("이미지 URL을 만들지 못했어요.");
+        return data.signedUrl;
+      })
+    );
     detected = await visionProvider.detectIngredients(signedUrls);
   } catch (err) {
     return {
