@@ -162,6 +162,63 @@
   font-size: 13px;
 }
 
+.theme-option {
+  position: relative;
+  cursor: pointer;
+  display: block;
+}
+
+.theme-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.theme-swatch {
+  display: block;
+  width: 108px;
+  padding: 14px 10px;
+  border-radius: 14px;
+  border: 2px solid var(--app-line);
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  background: var(--app-bg);
+  color: var(--app-text);
+}
+
+.theme-swatch .dot {
+  display: block;
+  width: 20px;
+  height: 20px;
+  margin: 0 auto 8px;
+  border-radius: 50%;
+  background: var(--app-accent);
+}
+
+.theme-option input:checked + .theme-swatch {
+  border-color: var(--app-accent-strong);
+  box-shadow: 0 0 0 2px var(--app-accent-strong) inset;
+}
+
+.settings-form label.field {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  margin: 16px 0 6px;
+  color: var(--app-text);
+}
+
+.settings-form select {
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid var(--app-line);
+  background: var(--app-surface);
+  color: var(--app-text);
+  width: 100%;
+  max-width: 280px;
+}
+
 .more-btn {
   width: 100%;
   border: 1.5px dashed var(--app-line);

@@ -57,8 +57,13 @@ export function UploadForm({
       return;
     }
 
-    // redirect()가 내부에서 발생하므로 try/catch 밖에서 호출한다.
-    await createFridgeSession({ sessionId, images: uploaded, visionProviderId });
+    // 성공하면 redirect()가 내부에서 발생하므로 try/catch 밖에서 호출한다.
+    // rate limit 같은 "예상 가능한" 실패는 throw 대신 {error}로 돌아온다.
+    const result = await createFridgeSession({ sessionId, images: uploaded, visionProviderId });
+    if (result?.error) {
+      setStatus("error");
+      setError(result.error);
+    }
   }
 
   return (

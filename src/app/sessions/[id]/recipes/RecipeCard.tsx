@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { setRecipeFeedback, toggleSaveRecipe } from "@/lib/fridge/actions";
+import { setRecipeFeedback, setRecipeComment, toggleSaveRecipe } from "@/lib/fridge/actions";
 
 type Recipe = {
   id: string;
@@ -14,14 +14,18 @@ type Recipe = {
 export function RecipeCard({
   recipe,
   initialReaction,
+  initialComment,
   initialSaved,
 }: {
   recipe: Recipe;
   initialReaction?: "like" | "dislike";
+  initialComment: string;
   initialSaved: boolean;
 }) {
   const [reaction, setReaction] = useState(initialReaction);
   const [saved, setSaved] = useState(initialSaved);
+  const [comment, setComment] = useState(initialComment);
+  const [commentSaved, setCommentSaved] = useState(false);
   const [, startTransition] = useTransition();
 
   function react(next: "like" | "dislike") {
@@ -36,6 +40,13 @@ export function RecipeCard({
     setSaved(next);
     startTransition(async () => {
       await toggleSaveRecipe(recipe.id, next);
+    });
+  }
+
+  function saveComment() {
+    setCommentSaved(true);
+    startTransition(async () => {
+      await setRecipeComment(recipe.id, comment);
     });
   }
 
@@ -70,6 +81,46 @@ export function RecipeCard({
         </div>
         <button type="button" className={`save-btn ${saved ? "saved" : ""}`} onClick={toggleSave}>
           {saved ? "저장됨" : "저장"}
+        </button>
+      </div>
+
+      <div style={{ marginTop: 10 }}>
+        <textarea
+          value={comment}
+          onChange={(e) => {
+            setComment(e.target.value);
+            setCommentSaved(false);
+          }}
+          placeholder={reaction ? "이 레시피에 대한 평가를 남겨주세요" : "먼저 좋아요/싫어요를 선택해주세요"}
+          disabled={!reaction}
+          rows={2}
+          style={{
+            width: "100%",
+            padding: 8,
+            fontSize: 13,
+            borderRadius: 8,
+            border: "1px solid var(--app-line)",
+            background: reaction ? "var(--app-surface)" : "var(--app-bg)",
+            color: "var(--app-text)",
+            resize: "vertical",
+          }}
+        />
+        <button
+          type="button"
+          onClick={saveComment}
+          disabled={!reaction}
+          style={{
+            marginTop: 6,
+            fontSize: 12,
+            padding: "5px 10px",
+            borderRadius: 999,
+            border: "1px solid var(--app-line)",
+            background: "transparent",
+            color: "var(--app-accent-strong)",
+            cursor: reaction ? "pointer" : "not-allowed",
+          }}
+        >
+          {commentSaved ? "코멘트 저장됨" : "코멘트 저장"}
         </button>
       </div>
     </article>

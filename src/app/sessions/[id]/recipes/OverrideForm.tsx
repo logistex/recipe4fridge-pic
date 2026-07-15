@@ -24,13 +24,16 @@ export function OverrideForm({
 }) {
   async function submitOverride(formData: FormData) {
     "use server";
-    await requestRecipes(sessionId, {
+    const result = await requestRecipes(sessionId, {
       cuisine: formData.get("cuisine")?.toString() || null,
       spiceLevel: formData.get("spice")?.toString() || null,
       difficulty: formData.get("difficulty")?.toString() || null,
       timeLimit: formData.get("time")?.toString() || null,
       textProviderId: formData.get("textProvider")?.toString() || null,
     });
+    if (result?.error) {
+      redirect(`/sessions/${sessionId}/recipes?error=${encodeURIComponent(result.error)}`);
+    }
     redirect(`/sessions/${sessionId}/recipes`);
   }
 

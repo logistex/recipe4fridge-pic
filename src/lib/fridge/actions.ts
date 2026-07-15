@@ -7,13 +7,14 @@ import { getVisionProvider, getTextProvider } from "@/lib/providers";
 
 // 짧은 시간에 같은 작업(사진 업로드, 레시피 요청)을 과도하게 반복하지 못하게 막는 간단한 rate limit.
 // 무료 API 한도/비용 남용 방지 목적 (docs/PRD.md 8.1).
-async function assertUnderRateLimit(
+// throw 하지 않고 boolean을 반환한다 — 호출하는 쪽에서 사용자에게 친절한 안내를 보여줄 수 있도록.
+async function isRateLimited(
   supabase: Awaited<ReturnType<typeof createClient>>,
   table: "fridge_sessions" | "recipe_requests",
   userId: string,
   windowMinutes: number,
   maxCount: number
-) {
+): Promise<boolean> {
   const since = new Date(Date.now() - windowMinutes * 60 * 1000).toISOString();
   const { count, error } = await supabase
     .from(table)
@@ -21,25 +22,23 @@ async function assertUnderRateLimit(
     .eq("user_id", userId)
     .gte("created_at", since);
   if (error) throw new Error(error.message);
-  if ((count ?? 0) >= maxCount) {
-    throw new Error(
-      `너무 많이 요청하셨어요. ${windowMinutes}분 후에 다시 시도해주세요.`
-    );
-  }
+  return (count ?? 0) >= maxCount;
 }
 
 export async function createFridgeSession(input: {
   sessionId: string;
   images: { path: string; originalSizeBytes: number; resized: boolean }[];
   visionProviderId?: string;
-}) {
+}): Promise<{ error: string } | void> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  await assertUnderRateLimit(supabase, "fridge_sessions", user.id, 10, 5);
+  if (await isRateLimited(supabase, "fridge_sessions", user.id, 10, 5)) {
+    return { error: "짧은 시간에 너무 많이 업로드하셨어요. 10분 후에 다시 시도해주세요." };
+  }
 
   const visionProvider = getVisionProvider(input.visionProviderId);
 
@@ -140,14 +139,19 @@ export type RecipeOverrides = {
   textProviderId?: string | null;
 };
 
-export async function requestRecipes(sessionId: string, overrides: RecipeOverrides) {
+export async function requestRecipes(
+  sessionId: string,
+  overrides: RecipeOverrides
+): Promise<{ error: string } | void> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  await assertUnderRateLimit(supabase, "recipe_requests", user.id, 10, 10);
+  if (await isRateLimited(supabase, "recipe_requests", user.id, 10, 10)) {
+    return { error: "짧은 시간에 너무 많이 요청하셨어요. 10분 후에 다시 시도해주세요." };
+  }
 
   const norm = (v?: string | null) => (v ? v : null);
   const cuisine = norm(overrides.cuisine);
@@ -223,6 +227,22 @@ export async function setRecipeFeedback(recipeId: string, reaction: "like" | "di
       { recipe_id: recipeId, user_id: user.id, reaction },
       { onConflict: "recipe_id,user_id" }
     );
+  if (error) throw new Error(error.message);
+}
+
+export async function setRecipeComment(recipeId: string, comment: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  // 코멘트는 좋아요/싫어요를 먼저 선택해야 남길 수 있다 (recipe_feedback.reaction은 not null).
+  const { error } = await supabase
+    .from("recipe_feedback")
+    .update({ comment_text: comment || null })
+    .eq("recipe_id", recipeId)
+    .eq("user_id", user.id);
   if (error) throw new Error(error.message);
 }
 

@@ -1,6 +1,7 @@
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUserAndProfile } from "@/lib/profile/get-current-profile";
+import { AppNav } from "@/components/AppNav";
 import { IngredientEditor } from "./IngredientEditor";
 
 export default async function IngredientsPage({
@@ -9,12 +10,7 @@ export default async function IngredientsPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const { supabase, profile } = await getCurrentUserAndProfile();
 
   const { data: session } = await supabase
     .from("fridge_sessions")
@@ -30,26 +26,31 @@ export default async function IngredientsPage({
     .order("name");
 
   return (
-    <main style={{ maxWidth: 480, margin: "60px auto", fontFamily: "system-ui" }}>
-      <h1 style={{ fontSize: 22 }}>인식된 재료</h1>
-      <p style={{ color: "#666", fontSize: 14 }}>
-        틀린 부분은 고치고, 빠진 재료는 추가해주세요.
-      </p>
+    <div className="theme-page" data-app-theme={profile.theme}>
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <AppNav isAdmin={profile.is_admin} />
+        <h1 style={{ fontSize: 22 }}>인식된 재료</h1>
+        <p style={{ color: "var(--app-muted)", fontSize: 14 }}>
+          틀린 부분은 고치고, 빠진 재료는 추가해주세요.
+        </p>
 
-      <IngredientEditor sessionId={id} initialIngredients={ingredients ?? []} />
+        <IngredientEditor sessionId={id} initialIngredients={ingredients ?? []} />
 
-      <Link
-        href={`/sessions/${id}/recipes`}
-        style={{
-          display: "inline-block",
-          marginTop: 24,
-          padding: "10px 16px",
-          border: "1px solid #333",
-          borderRadius: 6,
-        }}
-      >
-        레시피 추천 받기
-      </Link>
-    </main>
+        <Link
+          href={`/sessions/${id}/recipes`}
+          style={{
+            display: "inline-block",
+            marginTop: 24,
+            padding: "10px 16px",
+            background: "var(--app-accent)",
+            color: "var(--app-accent-ink)",
+            borderRadius: 999,
+            fontWeight: 700,
+          }}
+        >
+          레시피 추천 받기
+        </Link>
+      </div>
+    </div>
   );
 }
