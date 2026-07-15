@@ -59,9 +59,30 @@ export async function createFridgeSession(input: {
   const { error: imagesError } = await supabase.from("fridge_images").insert(imageRows);
   if (imagesError) throw new Error(imagesError.message);
 
-  const detected = await visionProvider.detectIngredients(
-    input.images.map((img) => img.path)
+  // mock provider는 URL 내용을 안 보지만, 실제 API(OpenRouter 등)는 이미지를 직접 가져와야 하므로
+  // 비공개 버킷 경로 대신 짧게 유효한 서명된 URL을 만들어 전달한다.
+  const signedUrls = await Promise.all(
+    input.images.map(async (img) => {
+      const { data, error } = await supabase.storage
+        .from("fridge-images")
+        .createSignedUrl(img.path, 300);
+      if (error || !data) throw new Error("이미지 URL을 만들지 못했어요.");
+      return data.signedUrl;
+    })
   );
+
+  let detected;
+  try {
+    detected = await visionProvider.detectIngredients(signedUrls);
+  } catch (err) {
+    return {
+      error:
+        err instanceof Error
+          ? err.message
+          : "식재료 인식에 실패했어요. 잠시 후 다시 시도하거나 다른 비전 API를 선택해주세요.",
+    };
+  }
+
   const ingredientRows = detected.map((d) => ({
     session_id: input.sessionId,
     name: d.name,
@@ -179,11 +200,21 @@ export async function requestRecipes(
   };
 
   const textProvider = getTextProvider(overrides.textProviderId);
-  const results = await textProvider.recommendRecipes({
-    ingredients,
-    preferences,
-    count: 3,
-  });
+  let results;
+  try {
+    results = await textProvider.recommendRecipes({
+      ingredients,
+      preferences,
+      count: 3,
+    });
+  } catch (err) {
+    return {
+      error:
+        err instanceof Error
+          ? err.message
+          : "레시피 추천에 실패했어요. 잠시 후 다시 시도하거나 다른 텍스트 API를 선택해주세요.",
+    };
+  }
 
   const { data: request, error: requestError } = await supabase
     .from("recipe_requests")

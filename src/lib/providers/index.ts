@@ -2,6 +2,8 @@ import { mockVisionProvider } from "./mock-vision";
 import { mockVisionDetailedProvider } from "./mock-vision-detailed";
 import { mockTextProvider } from "./mock-text";
 import { mockTextQuickProvider } from "./mock-text-quick";
+import { openRouterVisionProvider } from "./openrouter-vision";
+import { openRouterTextProvider } from "./openrouter-text";
 import type { VisionProvider, TextProvider } from "./types";
 
 // 무료 API가 여러 개 붙을 걸 대비한 registry (docs/PRD.md 7장).
@@ -9,13 +11,16 @@ import type { VisionProvider, TextProvider } from "./types";
 export const visionProviders: Record<string, VisionProvider> = {
   [mockVisionProvider.id]: mockVisionProvider,
   [mockVisionDetailedProvider.id]: mockVisionDetailedProvider,
+  [openRouterVisionProvider.id]: openRouterVisionProvider,
 };
 
 export const textProviders: Record<string, TextProvider> = {
   [mockTextProvider.id]: mockTextProvider,
   [mockTextQuickProvider.id]: mockTextQuickProvider,
+  [openRouterTextProvider.id]: openRouterTextProvider,
 };
 
+// 기본값은 여전히 mock — 실제 API는 사용자가 화면에서 명시적으로 선택했을 때만 쓰인다.
 export const DEFAULT_VISION_PROVIDER = mockVisionProvider.id;
 export const DEFAULT_TEXT_PROVIDER = mockTextProvider.id;
 
