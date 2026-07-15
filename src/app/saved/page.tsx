@@ -35,17 +35,15 @@ export default async function SavedRecipesPage() {
 
   return (
     <div className="theme-page" data-app-theme={profile.theme}>
-      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+      <div className="container">
         <AppNav isAdmin={profile.is_admin} />
         <h1>저장한 레시피</h1>
-        <p style={{ color: "var(--app-muted)", fontSize: 13, marginBottom: 16 }}>
+        <p className="page-subtitle">
           &ldquo;저장&rdquo; 버튼을 눌렀던 레시피 목록이에요. 저장 취소하면 이 목록에서 빠져요.
         </p>
 
         {orderedRecipes.length === 0 && (
-          <p style={{ color: "var(--app-muted)", fontSize: 14 }}>
-            아직 저장한 레시피가 없어요.
-          </p>
+          <p className="empty-state">아직 저장한 레시피가 없어요.</p>
         )}
 
         {orderedRecipes.map((r) => (

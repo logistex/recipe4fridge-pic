@@ -96,12 +96,8 @@ export function RecipeCard({
           rows={2}
           style={{
             width: "100%",
-            padding: 8,
             fontSize: 13,
-            borderRadius: 8,
-            border: "1px solid var(--app-line)",
             background: reaction ? "var(--app-surface)" : "var(--app-bg)",
-            color: "var(--app-text)",
             resize: "vertical",
           }}
         />
@@ -109,16 +105,8 @@ export function RecipeCard({
           type="button"
           onClick={saveComment}
           disabled={!reaction}
-          style={{
-            marginTop: 6,
-            fontSize: 12,
-            padding: "5px 10px",
-            borderRadius: 999,
-            border: "1px solid var(--app-line)",
-            background: "transparent",
-            color: "var(--app-accent-strong)",
-            cursor: reaction ? "pointer" : "not-allowed",
-          }}
+          className="btn-outline"
+          style={{ marginTop: 8, fontSize: 12, padding: "6px 12px" }}
         >
           {commentSaved ? "코멘트 저장됨" : "코멘트 저장"}
         </button>

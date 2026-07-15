@@ -46,16 +46,14 @@ export default async function AdminPage() {
 
   return (
     <div className="theme-page" data-app-theme={profile.theme}>
-      <div style={{ maxWidth: 640, margin: "0 auto" }}>
+      <div className="container-wide">
         <AppNav isAdmin={profile.is_admin} />
         <h1>관리자 — 레시피 평가 집계</h1>
-        <p style={{ color: "var(--app-muted)", fontSize: 13, marginBottom: 16 }}>
+        <p className="page-subtitle">
           전체 사용자의 좋아요/싫어요와 코멘트를 레시피별로 모아봤어요. (전체 기간 기준)
         </p>
 
-        {rows.length === 0 && (
-          <p style={{ color: "var(--app-muted)", fontSize: 14 }}>아직 쌓인 평가가 없어요.</p>
-        )}
+        {rows.length === 0 && <p className="empty-state">아직 쌓인 평가가 없어요.</p>}
 
         {rows.map(([recipeId, r]) => (
           <div key={recipeId} className="recipe-card">

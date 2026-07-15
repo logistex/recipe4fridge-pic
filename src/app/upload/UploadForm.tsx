@@ -69,25 +69,27 @@ export function UploadForm({
         setError(result.error);
       }
     } catch (err) {
+      // 여기로 잡히는 에러는 항상 "예상 못한" 실패다 (예상 가능한 실패는 이미
+      // createFridgeSession이 {error}로 정상 반환한다). 이 시점의 에러 메시지는
+      // "An unexpected response was received from the server." 같은 Next.js
+      // 내부 기술 문구라 사용자에게 그대로 보여주면 안 된다 — 콘솔에만 남기고
+      // 화면에는 항상 우리 문구를 보여준다.
+      console.error("createFridgeSession 예상치 못한 실패:", err);
       setStatus("error");
       setError(
-        err instanceof Error
-          ? err.message
-          : "요청이 너무 오래 걸리거나 서버 오류가 발생했어요. 잠시 후 다시 시도해주세요."
+        "서버 응답이 너무 오래 걸리거나 일시적인 오류가 발생했어요. 잠시 후 다시 시도해주세요. 계속되면 다른 비전 API를 선택해보세요."
       );
     }
   }
 
   return (
-    <div style={{ marginTop: 20 }}>
-      <div style={{ marginBottom: 12 }}>
-        <label style={{ fontSize: 13, color: "var(--app-muted)", display: "block", marginBottom: 4 }}>
-          식재료 인식에 쓸 비전 API
-        </label>
+    <div className="card" style={{ marginTop: 20 }}>
+      <div style={{ marginBottom: 14 }}>
+        <label className="field-label">식재료 인식에 쓸 비전 API</label>
         <select
           value={visionProviderId}
           onChange={(e) => setVisionProviderId(e.target.value)}
-          style={{ padding: 6, width: "100%" }}
+          style={{ width: "100%" }}
         >
           {providers.map((p) => (
             <option key={p.id} value={p.id}>
@@ -97,7 +99,8 @@ export function UploadForm({
         </select>
       </div>
 
-      <input type="file" accept="image/*" multiple onChange={handleFiles} />
+      <label className="field-label">냉장고 사진</label>
+      <input type="file" accept="image/*" multiple onChange={handleFiles} style={{ width: "100%" }} />
 
       {previews.length > 0 && (
         <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
@@ -109,13 +112,13 @@ export function UploadForm({
               alt={`업로드 미리보기 ${i + 1}`}
               width={100}
               height={100}
-              style={{ objectFit: "cover", borderRadius: 8 }}
+              style={{ objectFit: "cover", borderRadius: 10, border: "1px solid var(--app-line)" }}
             />
           ))}
         </div>
       )}
 
-      {error && <p style={{ color: "var(--app-error)", fontSize: 14 }}>{error}</p>}
+      {error && <p style={{ color: "var(--app-error)", fontSize: 14, marginTop: 12 }}>{error}</p>}
 
       {status === "uploading" && (
         <p style={{ color: "var(--app-muted)", fontSize: 12, marginTop: 8 }}>
@@ -127,7 +130,8 @@ export function UploadForm({
         type="button"
         onClick={handleSubmit}
         disabled={files.length === 0 || status === "uploading"}
-        style={{ marginTop: 16, padding: 10, cursor: "pointer" }}
+        className="btn-primary btn-block"
+        style={{ marginTop: 16 }}
       >
         {status === "uploading" ? "업로드 중..." : "업로드하고 재료 인식하기"}
       </button>

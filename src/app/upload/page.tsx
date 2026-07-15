@@ -17,12 +17,10 @@ export default async function UploadPage() {
 
   return (
     <div className="theme-page" data-app-theme={profile.theme}>
-      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+      <div className="container">
         <AppNav isAdmin={profile.is_admin} />
-        <h1 style={{ fontSize: 22 }}>냉장고 사진 업로드</h1>
-        <p style={{ color: "var(--app-muted)", fontSize: 14 }}>
-          최대 3장까지 업로드할 수 있어요. 큰 사진은 자동으로 축소돼요.
-        </p>
+        <h1>냉장고 사진 업로드</h1>
+        <p className="page-subtitle">최대 3장까지 업로드할 수 있어요. 큰 사진은 자동으로 축소돼요.</p>
         <UploadForm
           userId={user.id}
           providers={providerOptions}

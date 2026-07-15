@@ -75,12 +75,10 @@ export default async function RecipesPage({
 
   return (
     <div className="theme-page" data-app-theme={theme}>
-      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+      <div className="container">
         <AppNav isAdmin={profile.is_admin} />
         <h1>레시피 추천</h1>
-        <p style={{ color: "var(--app-muted)", fontSize: 13 }}>
-          이번 요청에 한해서만 조건을 바꿔 다시 받아볼 수 있어요.
-        </p>
+        <p className="page-subtitle">이번 요청에 한해서만 조건을 바꿔 다시 받아볼 수 있어요.</p>
 
         {(generationError || errorParam) && (
           <p style={{ color: "var(--app-error)", fontSize: 13, marginTop: 8 }}>

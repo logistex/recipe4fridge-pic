@@ -11,13 +11,19 @@ export default async function Home() {
   if (!user) {
     return (
       <div className="theme-page" data-app-theme="apricot">
-        <main style={{ maxWidth: 480, margin: "0 auto" }}>
+        <main className="container">
           <h1>recipe4fridge_pic</h1>
-          <p>로그인이 필요해요.</p>
-          <p style={{ display: "flex", gap: 12 }}>
-            <Link href="/login">로그인</Link>
-            <Link href="/signup">회원가입</Link>
+          <p className="page-subtitle" style={{ marginBottom: 20 }}>
+            냉장고 사진 한 장으로 오늘 만들 수 있는 레시피를 찾아드려요.
           </p>
+          <div style={{ display: "flex", gap: 10 }}>
+            <Link href="/login" className="btn btn-primary">
+              로그인
+            </Link>
+            <Link href="/signup" className="btn btn-outline">
+              회원가입
+            </Link>
+          </div>
         </main>
       </div>
     );
@@ -32,15 +38,20 @@ export default async function Home() {
 
   return (
     <div className="theme-page" data-app-theme={theme}>
-      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+      <div className="container">
         <AppNav isAdmin={profile?.is_admin} />
         <h1>recipe4fridge_pic</h1>
-        <p>
-          <strong>{user.email}</strong>님으로 로그인되어 있어요.
+        <p className="page-subtitle" style={{ marginBottom: 20 }}>
+          <strong style={{ color: "var(--app-text)" }}>{user.email}</strong>님으로 로그인되어 있어요.
         </p>
-        <p>
-          <Link href="/upload">냉장고 사진으로 레시피 찾기</Link>
-        </p>
+        <div className="card" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <Link href="/upload" className="btn btn-primary btn-block">
+            냉장고 사진으로 레시피 찾기
+          </Link>
+          <Link href="/sessions" className="btn btn-outline btn-block">
+            이전 재료로 다시 추천받기
+          </Link>
+        </div>
       </div>
     </div>
   );

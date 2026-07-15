@@ -46,10 +46,17 @@ export function IngredientEditor({
   }
 
   return (
-    <div style={{ marginTop: 16 }}>
+    <div className="card" style={{ marginTop: 16 }}>
+      {ingredients.length === 0 && (
+        <p style={{ color: "var(--app-muted)", fontSize: 13, margin: "0 0 12px" }}>
+          인식된 재료가 없어요. 아래에서 직접 추가해주세요.
+        </p>
+      )}
+
       {ingredients.map((ing) => (
-        <div key={ing.id} style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 6 }}>
+        <div key={ing.id} style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
           <input
+            type="text"
             value={ing.name}
             onChange={(e) =>
               setIngredients((prev) =>
@@ -57,9 +64,10 @@ export function IngredientEditor({
               )
             }
             onBlur={() => handleBlurSave(ing)}
-            style={{ padding: 6, flex: 2 }}
+            style={{ flex: 2 }}
           />
           <input
+            type="text"
             value={ing.quantity_text ?? ""}
             placeholder="수량"
             onChange={(e) =>
@@ -68,28 +76,35 @@ export function IngredientEditor({
               )
             }
             onBlur={() => handleBlurSave(ing)}
-            style={{ padding: 6, flex: 1 }}
+            style={{ flex: 1 }}
           />
-          <button type="button" onClick={() => handleDelete(ing.id)} aria-label={`${ing.name} 삭제`} style={{ cursor: "pointer" }}>
+          <button
+            type="button"
+            onClick={() => handleDelete(ing.id)}
+            aria-label={`${ing.name} 삭제`}
+            className="icon-btn"
+          >
             ×
           </button>
         </div>
       ))}
 
-      <div style={{ display: "flex", gap: 6, marginTop: 12 }}>
+      <div style={{ display: "flex", gap: 8, marginTop: 12, paddingTop: 12, borderTop: "1px solid var(--app-line)" }}>
         <input
+          type="text"
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
           placeholder="재료 이름"
-          style={{ padding: 6, flex: 2 }}
+          style={{ flex: 2 }}
         />
         <input
+          type="text"
           value={newQty}
           onChange={(e) => setNewQty(e.target.value)}
           placeholder="수량 (선택)"
-          style={{ padding: 6, flex: 1 }}
+          style={{ flex: 1 }}
         />
-        <button type="button" onClick={handleAdd} disabled={isPending} style={{ cursor: "pointer" }}>
+        <button type="button" onClick={handleAdd} disabled={isPending} className="btn-outline">
           추가
         </button>
       </div>
