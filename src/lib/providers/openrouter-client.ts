@@ -68,4 +68,28 @@ export async function chatJson<T>(model: string, messages: ChatMessage[]): Promi
   return parseJsonResponse<T>(raw);
 }
 
+// 무료 모델 라인업은 자주 바뀌거나 일시적으로 막힐 수 있다 (docs/PRD.md 7.1).
+// models 배열을 앞에서부터 순서대로 시도하다가, 호출/형식 검증 중 하나라도 실패하면
+// 다음 후보로 자동으로 넘어간다. 마지막 후보까지 전부 실패해야 에러를 던진다.
+export async function chatJsonWithFallback<T>(
+  models: string[],
+  messages: ChatMessage[],
+  validate: (data: unknown) => T
+): Promise<{ result: T; model: string }> {
+  const candidates = Array.from(new Set(models.filter(Boolean)));
+  let lastError: unknown;
+  for (const model of candidates) {
+    try {
+      const raw = await callOpenRouter(model, messages);
+      const parsed = parseJsonResponse<unknown>(raw);
+      return { result: validate(parsed), model };
+    } catch (err) {
+      lastError = err;
+    }
+  }
+  throw lastError instanceof Error
+    ? lastError
+    : new OpenRouterError("사용 가능한 무료 모델을 찾지 못했어요.");
+}
+
 export type { ChatMessage, ChatContentPart };

@@ -1,7 +1,15 @@
 import type { TextProvider, RecipeResult } from "./types";
-import { chatJson } from "./openrouter-client";
+import { chatJsonWithFallback, OpenRouterError } from "./openrouter-client";
 
-const MODEL = process.env.OPENROUTER_TEXT_MODEL || "meta-llama/llama-3.3-70b-instruct:free";
+// 1순위 모델은 환경변수로 지정 가능, 나머지는 자동 대체(fallback) 후보 (docs/PRD.md 7.1).
+const PRIMARY_MODEL =
+  process.env.OPENROUTER_TEXT_MODEL || "meta-llama/llama-3.3-70b-instruct:free";
+const FALLBACK_MODELS = [
+  "meta-llama/llama-3.1-8b-instruct:free",
+  "qwen/qwen-2.5-72b-instruct:free",
+  "google/gemini-2.0-flash-exp:free",
+];
+const MODEL_CANDIDATES = [PRIMARY_MODEL, ...FALLBACK_MODELS];
 
 const CUISINE_LABEL: Record<string, string> = {
   korean: "한식",
@@ -17,9 +25,24 @@ const TIME_LABEL: Record<string, string> = {
   no_limit: "시간 제한 없음",
 };
 
+function validateRecipes(data: unknown, count: number): RecipeResult[] {
+  if (!Array.isArray(data)) {
+    throw new OpenRouterError("텍스트 API 응답 형식이 예상과 달라요.");
+  }
+  return data
+    .filter((r): r is Record<string, unknown> => !!r && typeof (r as { title?: unknown }).title === "string")
+    .slice(0, count)
+    .map((r) => ({
+      title: r.title as string,
+      ingredients: Array.isArray(r.ingredients) ? (r.ingredients as string[]) : [],
+      steps: Array.isArray(r.steps) ? (r.steps as string[]) : [],
+      estTimeMinutes: typeof r.estTimeMinutes === "number" ? r.estTimeMinutes : 20,
+    }));
+}
+
 export const openRouterTextProvider: TextProvider = {
   id: "openrouter-text",
-  label: `OpenRouter · ${MODEL} (실제 API, 무료 티어)`,
+  label: `OpenRouter · ${PRIMARY_MODEL} (실제 API, 무료 티어, 실패 시 자동 대체)`,
   async recommendRecipes({ ingredients, preferences, count }) {
     const prefLines = [
       preferences.cuisine && `요리 종류: ${CUISINE_LABEL[preferences.cuisine] ?? preferences.cuisine}`,
@@ -40,22 +63,14 @@ export const openRouterTextProvider: TextProvider = {
       (prefLines ? `선호 조건: ${prefLines}\n` : "") +
       `레시피를 정확히 ${count}개 추천해줘. 보유 재료를 최대한 활용하는 레시피로 골라줘.`;
 
-    const result = await chatJson<RecipeResult[]>(MODEL, [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userPrompt },
-    ]);
-
-    if (!Array.isArray(result)) {
-      throw new Error("텍스트 API 응답 형식이 예상과 달라요.");
-    }
-    return result
-      .filter((r) => r && typeof r.title === "string")
-      .slice(0, count)
-      .map((r) => ({
-        title: r.title,
-        ingredients: Array.isArray(r.ingredients) ? r.ingredients : [],
-        steps: Array.isArray(r.steps) ? r.steps : [],
-        estTimeMinutes: typeof r.estTimeMinutes === "number" ? r.estTimeMinutes : 20,
-      }));
+    const { result } = await chatJsonWithFallback<RecipeResult[]>(
+      MODEL_CANDIDATES,
+      [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      (data) => validateRecipes(data, count)
+    );
+    return result;
   },
 };
