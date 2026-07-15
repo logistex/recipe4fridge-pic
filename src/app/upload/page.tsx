@@ -3,6 +3,10 @@ import { visionProviders, DEFAULT_VISION_PROVIDER } from "@/lib/providers";
 import { AppNav } from "@/components/AppNav";
 import { UploadForm } from "./UploadForm";
 
+// 실제 비전 API(OpenRouter)는 여러 무료 모델을 순서대로 재시도할 수 있어
+// 기본 서버리스 함수 시간제한보다 오래 걸릴 수 있다 (docs/PRD.md 7.1).
+export const maxDuration = 60;
+
 export default async function UploadPage() {
   const { user, profile } = await getCurrentUserAndProfile();
 

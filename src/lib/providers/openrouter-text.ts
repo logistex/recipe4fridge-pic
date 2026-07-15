@@ -14,7 +14,6 @@ const PRIMARY_MODEL =
 const FALLBACK_MODELS = [
   "qwen/qwen3-next-80b-a3b-instruct:free",
   "cognitivecomputations/dolphin-mistral-24b-venice-edition:free",
-  "nousresearch/hermes-3-llama-3.1-405b:free",
   "meta-llama/llama-3.3-70b-instruct:free",
   "openrouter/free",
 ];

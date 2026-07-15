@@ -6,6 +6,10 @@ import { AppNav } from "@/components/AppNav";
 import { RecipeCard } from "./RecipeCard";
 import { OverrideForm } from "./OverrideForm";
 
+// 실제 텍스트 API(OpenRouter)는 여러 무료 모델을 순서대로 재시도할 수 있어
+// 기본 서버리스 함수 시간제한보다 오래 걸릴 수 있다 (docs/PRD.md 7.1).
+export const maxDuration = 60;
+
 export default async function RecipesPage({
   params,
   searchParams,

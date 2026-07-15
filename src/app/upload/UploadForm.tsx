@@ -57,12 +57,24 @@ export function UploadForm({
       return;
     }
 
-    // 성공하면 redirect()가 내부에서 발생하므로 try/catch 밖에서 호출한다.
-    // rate limit 같은 "예상 가능한" 실패는 throw 대신 {error}로 돌아온다.
-    const result = await createFridgeSession({ sessionId, images: uploaded, visionProviderId });
-    if (result?.error) {
+    // rate limit/API 실패 같은 "예상 가능한" 실패는 throw 대신 {error}로 돌아온다.
+    // 성공하면 redirect()가 서버 액션 내부에서 발생하는데, 이건 Next.js가 특수한
+    // 예외로 던져서 처리하는 방식이라 try 안에서 호출해도 정상적으로 페이지 이동된다.
+    // 네트워크 오류·서버 타임아웃처럼 예상 못한 실패까지 잡아서, 버튼이
+    // "업로드 중..."에 멈춰있지 않고 에러 문구를 보여주도록 한다.
+    try {
+      const result = await createFridgeSession({ sessionId, images: uploaded, visionProviderId });
+      if (result?.error) {
+        setStatus("error");
+        setError(result.error);
+      }
+    } catch (err) {
       setStatus("error");
-      setError(result.error);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "요청이 너무 오래 걸리거나 서버 오류가 발생했어요. 잠시 후 다시 시도해주세요."
+      );
     }
   }
 
