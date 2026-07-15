@@ -69,6 +69,21 @@ async function callOpenRouter(model: string, messages: ChatMessage[]): Promise<s
   return content;
 }
 
+// 응답 문자열에서 첫 '['/'{' 부터 마지막으로 짝이 맞는 ']'/'}' 까지만 잘라낸다.
+// 지시를 잘 안 따르는 모델은 "여기 결과예요: [...] 도움이 됐길 바라요!"처럼
+// 코드블록 밖에 설명 문장을 덧붙이는 경우가 있어서, JSON 부분만 골라내기 위함이다.
+function extractJsonSubstring(text: string): string | null {
+  const firstArray = text.indexOf("[");
+  const firstObject = text.indexOf("{");
+  const starts = [firstArray, firstObject].filter((i) => i !== -1);
+  if (starts.length === 0) return null;
+  const start = Math.min(...starts);
+  const closeChar = text[start] === "[" ? "]" : "}";
+  const end = text.lastIndexOf(closeChar);
+  if (end === -1 || end <= start) return null;
+  return text.slice(start, end + 1);
+}
+
 // 모델 응답이 ```json ... ``` 코드블록으로 감싸져 오는 경우가 많아 벗겨내고 JSON.parse 한다.
 export function parseJsonResponse<T>(raw: string): T {
   const stripped = raw
@@ -79,6 +94,15 @@ export function parseJsonResponse<T>(raw: string): T {
   try {
     return JSON.parse(stripped) as T;
   } catch {
+    // 코드블록 벗기기만으로 안 되면, 텍스트 안에서 JSON처럼 보이는 부분만 한 번 더 추출해본다.
+    const extracted = extractJsonSubstring(stripped);
+    if (extracted) {
+      try {
+        return JSON.parse(extracted) as T;
+      } catch {
+        // 아래에서 공통으로 에러를 던진다.
+      }
+    }
     throw new OpenRouterError("OpenRouter 응답을 이해하지 못했어요 (JSON 형식이 아니에요).");
   }
 }

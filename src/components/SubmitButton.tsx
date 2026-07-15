@@ -9,14 +9,16 @@ export function SubmitButton({
   children,
   pendingLabel,
   className,
+  style,
 }: {
   children: React.ReactNode;
   pendingLabel: string;
   className?: string;
+  style?: React.CSSProperties;
 }) {
   const { pending } = useFormStatus();
   return (
-    <button type="submit" disabled={pending} className={className}>
+    <button type="submit" disabled={pending} className={className} style={style}>
       {pending ? pendingLabel : children}
     </button>
   );
