@@ -1,0 +1,176 @@
+/* recipe4fridge_pic 디자인 테마 3종 (docs/PRD.md 5.5) — 목업에서 이식한 토큰 */
+
+[data-app-theme="apricot"] {
+  --app-bg: #fff1e2;
+  --app-surface: #fffaf3;
+  --app-text: #3a2540;
+  --app-muted: #8a6f78;
+  --app-line: #f3ddc4;
+  --app-accent: #ff6b4d;
+  --app-accent-strong: #d94e2f;
+  --app-accent-ink: #fff6ee;
+  --app-chip-bg: #ffe0c2;
+  --app-chip-line: #f3c79a;
+  --app-radius: 20px;
+  --app-radius-sm: 12px;
+}
+
+[data-app-theme="greens"] {
+  --app-bg: #f1f7ee;
+  --app-surface: #ffffff;
+  --app-text: #223226;
+  --app-muted: #62766a;
+  --app-line: #cfe3d1;
+  --app-accent: #2f7d4f;
+  --app-accent-strong: #1f5c3a;
+  --app-accent-ink: #f2fbf3;
+  --app-chip-bg: #ffffff;
+  --app-chip-line: #bcdcc0;
+  --app-radius: 10px;
+  --app-radius-sm: 8px;
+}
+
+[data-app-theme="bakery"] {
+  --app-bg: #fff7de;
+  --app-surface: #fffdf3;
+  --app-text: #22305c;
+  --app-muted: #6b6a55;
+  --app-line: #f1e4ad;
+  --app-accent: #223366;
+  --app-accent-strong: #d6483a;
+  --app-accent-ink: #fff7de;
+  --app-chip-bg: #223366;
+  --app-chip-line: #223366;
+  --app-radius: 14px;
+  --app-radius-sm: 10px;
+}
+
+.theme-page {
+  background: var(--app-bg);
+  color: var(--app-text);
+  min-height: 100vh;
+  padding: 32px 20px 60px;
+  font-family: -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", "Segoe UI", system-ui, sans-serif;
+}
+
+.theme-page h1 {
+  font-size: 20px;
+  margin: 0 0 4px;
+}
+
+.recipe-card {
+  background: var(--app-surface);
+  border: 1px solid var(--app-line);
+  border-radius: var(--app-radius);
+  padding: 16px;
+  margin-bottom: 14px;
+}
+
+.recipe-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.recipe-card-title {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.recipe-card-meta {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--app-accent-strong);
+  white-space: nowrap;
+}
+
+.recipe-card-ingredients {
+  font-size: 13px;
+  color: var(--app-muted);
+  margin: 6px 0 10px;
+}
+
+.recipe-card-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.reaction-btn {
+  border: 1px solid var(--app-line);
+  background: var(--app-bg);
+  color: var(--app-muted);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  margin-right: 6px;
+}
+
+.reaction-btn.active {
+  background: var(--app-accent);
+  color: var(--app-accent-ink);
+  border-color: var(--app-accent);
+}
+
+.save-btn {
+  border: none;
+  background: var(--app-accent);
+  color: var(--app-accent-ink);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 7px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.save-btn.saved {
+  background: var(--app-accent-strong);
+}
+
+.pref-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  background: var(--app-surface);
+  border: 1px solid var(--app-line);
+  border-radius: var(--app-radius-sm);
+  padding: 12px;
+  margin: 16px 0 20px;
+}
+
+.pref-bar select {
+  padding: 6px;
+  border-radius: 6px;
+  border: 1px solid var(--app-line);
+  background: var(--app-surface);
+  color: var(--app-text);
+}
+
+.pref-bar button {
+  background: var(--app-accent);
+  color: var(--app-accent-ink);
+  border: none;
+  padding: 8px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.more-btn {
+  width: 100%;
+  border: 1.5px dashed var(--app-line);
+  background: transparent;
+  color: var(--app-accent-strong);
+  font-weight: 700;
+  font-size: 13px;
+  padding: 12px;
+  border-radius: var(--app-radius-sm);
+  cursor: pointer;
+  margin-top: 8px;
+}
