@@ -13,6 +13,7 @@
   --app-chip-line: #f3c79a;
   --app-radius: 20px;
   --app-radius-sm: 12px;
+  --app-error: #c9302c;
 }
 
 [data-app-theme="greens"] {
@@ -28,6 +29,7 @@
   --app-chip-line: #bcdcc0;
   --app-radius: 10px;
   --app-radius-sm: 8px;
+  --app-error: #c9302c;
 }
 
 [data-app-theme="bakery"] {
@@ -43,6 +45,7 @@
   --app-chip-line: #223366;
   --app-radius: 14px;
   --app-radius-sm: 10px;
+  --app-error: #c9302c;
 }
 
 .theme-page {

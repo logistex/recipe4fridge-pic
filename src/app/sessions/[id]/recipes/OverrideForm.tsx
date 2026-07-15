@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { requestRecipes } from "@/lib/fridge/actions";
+import { SubmitButton } from "@/components/SubmitButton";
 
 type Defaults = {
   cuisine_override: string | null;
@@ -71,7 +72,9 @@ export function OverrideForm({
           </option>
         ))}
       </select>
-      <button type="submit">이번만 다르게 추천받기</button>
+      <SubmitButton pendingLabel="레시피를 생성하고 있어요... (최대 1분 정도 걸릴 수 있어요)">
+        이번만 다르게 추천받기
+      </SubmitButton>
     </form>
   );
 }

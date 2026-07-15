@@ -81,7 +81,7 @@ export function UploadForm({
   return (
     <div style={{ marginTop: 20 }}>
       <div style={{ marginBottom: 12 }}>
-        <label style={{ fontSize: 13, color: "#555", display: "block", marginBottom: 4 }}>
+        <label style={{ fontSize: 13, color: "var(--app-muted)", display: "block", marginBottom: 4 }}>
           식재료 인식에 쓸 비전 API
         </label>
         <select
@@ -115,7 +115,13 @@ export function UploadForm({
         </div>
       )}
 
-      {error && <p style={{ color: "crimson", fontSize: 14 }}>{error}</p>}
+      {error && <p style={{ color: "var(--app-error)", fontSize: 14 }}>{error}</p>}
+
+      {status === "uploading" && (
+        <p style={{ color: "var(--app-muted)", fontSize: 12, marginTop: 8 }}>
+          실제 AI API를 호출 중이라 최대 1분 정도 걸릴 수 있어요.
+        </p>
+      )}
 
       <button
         type="button"

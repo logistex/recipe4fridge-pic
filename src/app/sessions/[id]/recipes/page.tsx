@@ -3,6 +3,7 @@ import { getCurrentUserAndProfile } from "@/lib/profile/get-current-profile";
 import { requestRecipes } from "@/lib/fridge/actions";
 import { textProviders, DEFAULT_TEXT_PROVIDER } from "@/lib/providers";
 import { AppNav } from "@/components/AppNav";
+import { SubmitButton } from "@/components/SubmitButton";
 import { RecipeCard } from "./RecipeCard";
 import { OverrideForm } from "./OverrideForm";
 
@@ -86,7 +87,7 @@ export default async function RecipesPage({
         </p>
 
         {(generationError || errorParam) && (
-          <p style={{ color: "crimson", fontSize: 13, marginTop: 8 }}>
+          <p style={{ color: "var(--app-error)", fontSize: 13, marginTop: 8 }}>
             {generationError ?? decodeURIComponent(errorParam!)}
           </p>
         )}
@@ -130,9 +131,12 @@ export default async function RecipesPage({
             }
             redirect(`/sessions/${id}/recipes`);
           }}>
-            <button type="submit" className="more-btn">
+            <SubmitButton
+              className="more-btn"
+              pendingLabel="레시피를 생성하고 있어요... (최대 1분 정도 걸릴 수 있어요)"
+            >
               다른 레시피 더 보기
-            </button>
+            </SubmitButton>
           </form>
         )}
       </div>

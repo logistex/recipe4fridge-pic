@@ -1,28 +1,24 @@
-import { mockVisionProvider } from "./mock-vision";
-import { mockVisionDetailedProvider } from "./mock-vision-detailed";
-import { mockTextProvider } from "./mock-text";
-import { mockTextQuickProvider } from "./mock-text-quick";
 import { openRouterVisionProvider } from "./openrouter-vision";
 import { openRouterTextProvider } from "./openrouter-text";
 import type { VisionProvider, TextProvider } from "./types";
 
 // 무료 API가 여러 개 붙을 걸 대비한 registry (docs/PRD.md 7장).
 // 실제 제공처를 추가할 때는 구현 파일을 만들고 아래 두 객체에 등록하면 된다.
+//
+// mock-vision*.ts / mock-text*.ts는 OpenRouter API 키가 없던 개발 초기에 전체 파이프라인을
+// 먼저 완성하기 위해 만든 가짜(하드코딩) 구현이라, 실사용자용 선택 목록에서는 뺐다.
+// 파일 자체는 지우지 않고 남겨뒀다 — 수업에서 "가짜 로직 vs 실제 API 호출"을 비교해서
+// 설명할 때 코드로 직접 보여줄 수 있다.
 export const visionProviders: Record<string, VisionProvider> = {
-  [mockVisionProvider.id]: mockVisionProvider,
-  [mockVisionDetailedProvider.id]: mockVisionDetailedProvider,
   [openRouterVisionProvider.id]: openRouterVisionProvider,
 };
 
 export const textProviders: Record<string, TextProvider> = {
-  [mockTextProvider.id]: mockTextProvider,
-  [mockTextQuickProvider.id]: mockTextQuickProvider,
   [openRouterTextProvider.id]: openRouterTextProvider,
 };
 
-// 기본값은 여전히 mock — 실제 API는 사용자가 화면에서 명시적으로 선택했을 때만 쓰인다.
-export const DEFAULT_VISION_PROVIDER = mockVisionProvider.id;
-export const DEFAULT_TEXT_PROVIDER = mockTextProvider.id;
+export const DEFAULT_VISION_PROVIDER = openRouterVisionProvider.id;
+export const DEFAULT_TEXT_PROVIDER = openRouterTextProvider.id;
 
 export function getVisionProvider(id?: string | null): VisionProvider {
   return (id && visionProviders[id]) || visionProviders[DEFAULT_VISION_PROVIDER];
