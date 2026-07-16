@@ -11,7 +11,7 @@ type FeedbackRow = {
 };
 
 export default async function AdminPage() {
-  const { supabase, profile } = await getCurrentUserAndProfile();
+  const { supabase, user, profile } = await getCurrentUserAndProfile();
 
   // 클라이언트에서 UI만 숨기지 않고, 서버에서 권한을 직접 강제한다 (docs/PRD.md 8.1).
   if (!profile.is_admin) redirect("/");
@@ -47,7 +47,7 @@ export default async function AdminPage() {
   return (
     <div className="theme-page" data-app-theme={profile.theme}>
       <div className="container-wide">
-        <AppNav isAdmin={profile.is_admin} />
+        <AppNav isAdmin={profile.is_admin} email={user.email} />
         <h1>관리자 — 레시피 평가 집계</h1>
         <p className="page-subtitle">
           전체 사용자의 좋아요/싫어요와 코멘트를 레시피별로 모아봤어요. (전체 기간 기준)

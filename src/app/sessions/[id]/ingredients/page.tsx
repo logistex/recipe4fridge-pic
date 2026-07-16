@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { getCurrentUserAndProfile } from "@/lib/profile/get-current-profile";
 import { AppNav } from "@/components/AppNav";
 import { SubmitButton } from "@/components/SubmitButton";
+import { StepIndicator } from "@/components/StepIndicator";
 import { requestRecipes } from "@/lib/fridge/actions";
 import { textProviders, DEFAULT_TEXT_PROVIDER } from "@/lib/providers";
 import { IngredientEditor } from "./IngredientEditor";
@@ -19,7 +20,7 @@ export default async function IngredientsPage({
 }) {
   const { id } = await params;
   const { error: errorParam } = await searchParams;
-  const { supabase, profile } = await getCurrentUserAndProfile();
+  const { supabase, user, profile } = await getCurrentUserAndProfile();
 
   const { data: session } = await supabase
     .from("fridge_sessions")
@@ -34,12 +35,44 @@ export default async function IngredientsPage({
     .eq("session_id", id)
     .order("name");
 
+  const { data: images } = await supabase
+    .from("fridge_images")
+    .select("image_url, display_order")
+    .eq("session_id", id)
+    .order("display_order");
+
+  const photoUrls = (
+    await Promise.all(
+      (images ?? []).map(async (img) => {
+        const { data } = await supabase.storage.from("fridge-images").createSignedUrl(img.image_url, 300);
+        return data?.signedUrl ?? null;
+      })
+    )
+  ).filter((url): url is string => !!url);
+
   return (
     <div className="theme-page" data-app-theme={profile.theme}>
       <div className="container">
-        <AppNav isAdmin={profile.is_admin} />
+        <AppNav isAdmin={profile.is_admin} email={user.email} />
+        <StepIndicator current={2} />
         <h1>인식된 재료</h1>
         <p className="page-subtitle">틀린 부분은 고치고, 빠진 재료는 추가해주세요.</p>
+
+        {photoUrls.length > 0 && (
+          <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
+            {photoUrls.map((url, i) => (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                key={i}
+                src={url}
+                alt={`업로드한 냉장고 사진 ${i + 1}`}
+                width={180}
+                height={180}
+                style={{ objectFit: "cover", borderRadius: 12, border: "1px solid var(--app-line)" }}
+              />
+            ))}
+          </div>
+        )}
 
         <IngredientEditor sessionId={id} initialIngredients={ingredients ?? []} />
 
@@ -68,29 +101,31 @@ export default async function IngredientsPage({
           className="card"
           style={{ marginTop: 24 }}
         >
-          <label className="field-label">선호 조건 (선택하지 않으면 설정의 기본값을 사용해요)</label>
+          <label className="field-label">
+            선호 조건 (설정에 저장해둔 값이 기본으로 선택돼요 — 이번 요청만 다르게 바꿀 수 있어요)
+          </label>
           <div className="pref-bar" style={{ margin: "0 0 16px", background: "var(--app-bg)" }}>
-            <select name="cuisine" defaultValue="">
-              <option value="">요리 종류(기본값)</option>
+            <select name="cuisine" defaultValue={profile.cuisine_type ?? ""}>
+              <option value="">선호 없음</option>
               <option value="korean">한식</option>
               <option value="western">양식</option>
               <option value="chinese">중식</option>
               <option value="japanese">일식</option>
             </select>
-            <select name="spice" defaultValue="">
-              <option value="">매운맛(기본값)</option>
+            <select name="spice" defaultValue={profile.spice_level ?? ""}>
+              <option value="">선호 없음</option>
               <option value="none">안 매움</option>
               <option value="medium">보통</option>
               <option value="hot">매움</option>
             </select>
-            <select name="difficulty" defaultValue="">
-              <option value="">난이도(기본값)</option>
+            <select name="difficulty" defaultValue={profile.difficulty ?? ""}>
+              <option value="">선호 없음</option>
               <option value="easy">쉬움</option>
               <option value="medium">보통</option>
               <option value="hard">어려움</option>
             </select>
-            <select name="time" defaultValue="">
-              <option value="">시간(기본값)</option>
+            <select name="time" defaultValue={profile.time_limit ?? ""}>
+              <option value="">선호 없음</option>
               <option value="under_15">15분 이내</option>
               <option value="under_30">30분 이내</option>
               <option value="no_limit">제한 없음</option>

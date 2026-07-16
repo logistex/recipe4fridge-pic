@@ -15,6 +15,9 @@ const CANDIDATES: { id: string; model: string }[] = [
   { id: "openrouter-vision-1", model: "google/gemma-4-26b-a4b-it:free" },
   { id: "openrouter-vision-2", model: "nvidia/nemotron-nano-12b-v2-vl:free" },
   { id: "openrouter-vision-3", model: "google/gemma-4-31b-it:free" },
+  // OpenRouter가 그 순간 살아있는 무료 모델 중 하나를 자동으로 골라주는 라우터.
+  // 위 3개가 전부 막혀있을 때를 대비한 네 번째 선택지로 노출한다.
+  { id: "openrouter-vision-auto", model: "openrouter/free" },
 ];
 
 const SYSTEM_PROMPT =
@@ -57,9 +60,13 @@ function createProvider(id: string, model: string): VisionProvider {
   // 고른 모델 하나가 죽어있을 때를 대비해 openrouter/free(그 순간 살아있는 무료
   // 모델을 OpenRouter가 자동으로 골라주는 라우터)만 최후의 안전망으로 붙여둔다.
   const candidates = model === "openrouter/free" ? [model] : [model, "openrouter/free"];
+  const label =
+    model === "openrouter/free"
+      ? "OpenRouter · 자동 선택 (매번 다른 무료 모델, 실제 API)"
+      : `OpenRouter · ${model} (실제 API, 무료)`;
   return {
     id,
-    label: `OpenRouter · ${model} (실제 API, 무료)`,
+    label,
     async detectIngredients(imageUrls) {
       if (imageUrls.length === 0) return [];
 

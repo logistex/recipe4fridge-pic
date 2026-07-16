@@ -1,6 +1,7 @@
 import { getCurrentUserAndProfile } from "@/lib/profile/get-current-profile";
 import { visionProviders, DEFAULT_VISION_PROVIDER } from "@/lib/providers";
 import { AppNav } from "@/components/AppNav";
+import { StepIndicator } from "@/components/StepIndicator";
 import { UploadForm } from "./UploadForm";
 
 // 실제 비전 API(OpenRouter)는 여러 무료 모델을 순서대로 재시도할 수 있어
@@ -18,7 +19,8 @@ export default async function UploadPage() {
   return (
     <div className="theme-page" data-app-theme={profile.theme}>
       <div className="container">
-        <AppNav isAdmin={profile.is_admin} />
+        <AppNav isAdmin={profile.is_admin} email={user.email} />
+        <StepIndicator current={1} />
         <h1>냉장고 사진 업로드</h1>
         <p className="page-subtitle">최대 3장까지 업로드할 수 있어요. 큰 사진은 자동으로 축소돼요.</p>
         <UploadForm

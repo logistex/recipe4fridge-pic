@@ -59,6 +59,15 @@ export async function createFridgeSession(input: {
   const { error: imagesError } = await supabase.from("fridge_images").insert(imageRows);
   if (imagesError) throw new Error(imagesError.message);
 
+  // 인식이 실패하거나 재료를 못 찾으면, 이미 만들어둔 세션/이미지 row와 스토리지
+  // 파일이 빈 기록으로 남지 않도록 정리한다 (fridge_images는 on delete cascade).
+  async function cleanupFailedSession() {
+    await supabase.from("fridge_sessions").delete().eq("id", input.sessionId);
+    await supabase.storage
+      .from("fridge-images")
+      .remove(input.images.map((img) => img.path));
+  }
+
   let detected;
   try {
     // mock provider는 URL 내용을 안 보지만, 실제 API(OpenRouter 등)는 이미지를 직접 가져와야 하므로
@@ -74,11 +83,21 @@ export async function createFridgeSession(input: {
     );
     detected = await visionProvider.detectIngredients(signedUrls);
   } catch (err) {
+    await cleanupFailedSession();
     return {
       error:
         err instanceof Error
           ? err.message
           : "식재료 인식에 실패했어요. 잠시 후 다시 시도하거나 다른 비전 API를 선택해주세요.",
+    };
+  }
+
+  if (detected.length === 0) {
+    // 재료를 하나도 못 찾았으면 빈 재료 확인 화면으로 보내는 대신, 업로드 화면에서
+    // 바로 재시도할 수 있도록 에러로 돌려준다.
+    await cleanupFailedSession();
+    return {
+      error: "사진에서 식재료를 하나도 찾지 못했어요. 더 선명한 사진으로 다시 시도하거나 다른 비전 API를 선택해주세요.",
     };
   }
 
@@ -198,6 +217,18 @@ export async function requestRecipes(
     timeLimit: timeLimit ?? profile?.time_limit ?? null,
   };
 
+  // 같은 세션에서 이미 추천했던 레시피 제목들을 모아서, 텍스트 API에 "이미 추천했으니
+  // 피하라"고 알려준다 — 재료/조건이 그대로면 모델이 겹치는 레시피를 다시 낼 수 있어서다.
+  const { data: pastRequestRows } = await supabase
+    .from("recipe_requests")
+    .select("id")
+    .eq("session_id", sessionId);
+  const pastRequestIds = (pastRequestRows ?? []).map((r) => r.id);
+  const { data: pastRecipeRows } = pastRequestIds.length
+    ? await supabase.from("recipes").select("title").in("request_id", pastRequestIds)
+    : { data: [] as { title: string }[] };
+  const previousTitles = Array.from(new Set((pastRecipeRows ?? []).map((r) => r.title)));
+
   const textProvider = getTextProvider(overrides.textProviderId);
   let results;
   try {
@@ -205,6 +236,7 @@ export async function requestRecipes(
       ingredients,
       preferences,
       count: 3,
+      previousTitles,
     });
   } catch (err) {
     return {
@@ -296,4 +328,35 @@ export async function toggleSaveRecipe(recipeId: string, save: boolean) {
       .eq("recipe_id", recipeId);
     if (error) throw new Error(error.message);
   }
+}
+
+export async function deleteFridgeSession(sessionId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  // 스토리지에 남은 사진 파일은 DB row 삭제(on delete cascade)로는 안 지워지니
+  // 먼저 경로를 알아내서 같이 지운다.
+  const { data: images } = await supabase
+    .from("fridge_images")
+    .select("image_url")
+    .eq("session_id", sessionId);
+
+  // user_id까지 명시적으로 조건에 넣어서, 다른 사람 세션은 지울 수 없도록 한다 (RLS와 별개의 방어선).
+  const { error } = await supabase
+    .from("fridge_sessions")
+    .delete()
+    .eq("id", sessionId)
+    .eq("user_id", user.id);
+  if (error) throw new Error(error.message);
+
+  if (images && images.length > 0) {
+    await supabase.storage
+      .from("fridge-images")
+      .remove(images.map((img) => img.image_url));
+  }
+
+  revalidatePath("/sessions");
 }

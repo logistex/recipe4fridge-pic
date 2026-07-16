@@ -41,8 +41,8 @@
   --app-accent: #223366;
   --app-accent-strong: #d6483a;
   --app-accent-ink: #fff7de;
-  --app-chip-bg: #223366;
-  --app-chip-line: #223366;
+  --app-chip-bg: #f7ecc4;
+  --app-chip-line: #e8d488;
   --app-radius: 14px;
   --app-radius-sm: 10px;
   --app-error: #c9302c;
@@ -99,6 +99,24 @@
 .container-wide {
   max-width: 640px;
   margin: 0 auto;
+}
+
+.brand-hero {
+  margin-bottom: var(--space-4);
+}
+
+.brand-hero-eyebrow {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--app-accent-strong);
+  margin: 0 0 6px;
+}
+
+.brand-hero h1 {
+  font-size: 32px;
+  letter-spacing: -0.02em;
 }
 
 .page-subtitle {
@@ -255,6 +273,74 @@
   color: var(--app-accent-strong);
 }
 
+.app-nav-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+}
+
+.app-nav-email {
+  font-size: 12px;
+  color: var(--app-muted);
+  white-space: nowrap;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 넓은 화면에서는 상단 바 대신 좌측 고정 사이드바로 전환한다. */
+@media (min-width: 900px) {
+  .theme-page {
+    padding-left: 260px;
+  }
+
+  .app-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 220px;
+    flex-direction: column;
+    align-items: stretch;
+    row-gap: 2px;
+    column-gap: 0;
+    padding: var(--space-6) var(--space-4);
+    margin-bottom: 0;
+    border-bottom: none;
+    border-right: 1px solid var(--app-line);
+    background: var(--app-surface);
+    overflow-y: auto;
+  }
+
+  .app-nav-brand {
+    margin-bottom: var(--space-4);
+  }
+
+  .app-nav a {
+    padding: 8px 10px;
+    border-radius: var(--app-radius-sm);
+  }
+
+  .app-nav a:hover {
+    background: var(--app-bg);
+  }
+
+  .app-nav-user {
+    margin-left: 0;
+    margin-top: auto;
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--app-line);
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .app-nav-email {
+    max-width: 100%;
+  }
+}
+
 .recipe-card {
   background: var(--app-surface);
   border: 1px solid var(--app-line);
@@ -266,7 +352,7 @@
 
 .recipe-card-head {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 10px;
   margin-bottom: 4px;
@@ -318,18 +404,21 @@
 }
 
 .theme-page .save-btn {
-  border: none;
-  background: var(--app-accent);
-  color: var(--app-accent-ink);
-  font-size: 12px;
-  font-weight: 700;
-  padding: 7px 12px;
-  border-radius: 999px;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1.5px solid var(--app-line);
+  background: var(--app-bg);
+  color: var(--app-muted);
+  border-radius: 50%;
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 .theme-page .save-btn.saved {
-  background: var(--app-accent-strong);
+  background: var(--app-accent);
+  color: var(--app-accent-ink);
+  border-color: var(--app-accent);
 }
 
 .pref-bar {
@@ -495,6 +584,29 @@
   color: var(--app-accent-strong);
   font-weight: 700;
   flex-shrink: 0;
+}
+
+.spinner {
+  display: inline-block;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border-style: solid;
+  border-color: currentColor;
+  border-top-color: transparent;
+  opacity: 0.85;
+  animation: recipe4fridge-spin 0.7s linear infinite;
+}
+
+@keyframes recipe4fridge-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
 }
 
 .empty-state {

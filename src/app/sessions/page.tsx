@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getCurrentUserAndProfile } from "@/lib/profile/get-current-profile";
 import { AppNav } from "@/components/AppNav";
+import { DeleteSessionButton } from "./DeleteSessionButton";
 
 const dateFormatter = new Intl.DateTimeFormat("ko-KR", {
   month: "long",
@@ -34,7 +35,7 @@ export default async function SessionsPage() {
   return (
     <div className="theme-page" data-app-theme={profile.theme}>
       <div className="container">
-        <AppNav isAdmin={profile.is_admin} />
+        <AppNav isAdmin={profile.is_admin} email={user.email} />
         <h1>이전 재료로 다시 추천받기</h1>
         <p className="page-subtitle">
           예전에 인식했던 재료로 바로 새 레시피를 받아볼 수 있어요. 사진을 다시 올릴 필요 없어요.
@@ -61,13 +62,19 @@ export default async function SessionsPage() {
                   : `${names.slice(0, 3).join(", ")} 외 ${names.length - 3}개`;
 
             return (
-              <Link key={s.id} href={`/sessions/${s.id}/ingredients`} className="card session-card">
-                <div>
-                  <div className="session-card-date">{dateFormatter.format(new Date(s.created_at))}</div>
-                  <div className="session-card-ingredients">{preview}</div>
-                </div>
-                <span className="session-card-arrow">→</span>
-              </Link>
+              <div key={s.id} className="card session-card">
+                <Link
+                  href={`/sessions/${s.id}/ingredients`}
+                  style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flex: 1, textDecoration: "none", color: "inherit" }}
+                >
+                  <div>
+                    <div className="session-card-date">{dateFormatter.format(new Date(s.created_at))}</div>
+                    <div className="session-card-ingredients">{preview}</div>
+                  </div>
+                  <span className="session-card-arrow">→</span>
+                </Link>
+                <DeleteSessionButton sessionId={s.id} />
+              </div>
             );
           })}
         </div>

@@ -4,12 +4,40 @@ import { requestRecipes } from "@/lib/fridge/actions";
 import { textProviders, DEFAULT_TEXT_PROVIDER } from "@/lib/providers";
 import { AppNav } from "@/components/AppNav";
 import { SubmitButton } from "@/components/SubmitButton";
+import { StepIndicator } from "@/components/StepIndicator";
 import { RecipeCard } from "./RecipeCard";
 import { OverrideForm } from "./OverrideForm";
 
 // 실제 텍스트 API(OpenRouter)는 여러 무료 모델을 순서대로 재시도할 수 있어
 // 기본 서버리스 함수 시간제한보다 오래 걸릴 수 있다 (docs/PRD.md 7.1).
 export const maxDuration = 60;
+
+const dateFormatter = new Intl.DateTimeFormat("ko-KR", {
+  month: "long",
+  day: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+});
+
+type RecipeRow = {
+  id: string;
+  title: string;
+  ingredients_json: string[];
+  steps_json: string[];
+  est_time_minutes: number | null;
+  created_at: string;
+};
+
+type RequestRow = {
+  id: string;
+  created_at: string;
+  cuisine_override: string | null;
+  spice_override: string | null;
+  difficulty_override: string | null;
+  time_override: string | null;
+  text_provider: string | null;
+  recipes: RecipeRow[];
+};
 
 export default async function RecipesPage({
   params,
@@ -31,13 +59,18 @@ export default async function RecipesPage({
 
   const theme = profile.theme;
 
-  const { data: latestRequest } = await supabase
+  // 이번 세션에서 지금까지 추천받은 배치를 전부 최신순으로 가져온다 — 새로 추천받으면
+  // 위에, 이전 추천들은 그 아래로 밀려나서 계속 보이도록 하기 위함이다.
+  const { data: allRequests } = await supabase
     .from("recipe_requests")
-    .select("id, cuisine_override, spice_override, difficulty_override, time_override, text_provider")
+    .select(
+      "id, created_at, cuisine_override, spice_override, difficulty_override, time_override, text_provider, recipes(id, title, ingredients_json, steps_json, est_time_minutes, created_at)"
+    )
     .eq("session_id", id)
     .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .returns<RequestRow[]>();
+
+  const latestRequest = allRequests?.[0] ?? null;
 
   let generationError: string | null = null;
 
@@ -53,15 +86,8 @@ export default async function RecipesPage({
     }
   }
 
-  const { data: recipes } = latestRequest
-    ? await supabase
-        .from("recipes")
-        .select("id, title, ingredients_json, steps_json, est_time_minutes")
-        .eq("request_id", latestRequest.id)
-        .order("created_at", { ascending: true })
-    : { data: [] as { id: string; title: string; ingredients_json: string[]; steps_json: string[]; est_time_minutes: number | null }[] };
-
-  const recipeIds = (recipes ?? []).map((r) => r.id);
+  const requests = allRequests ?? [];
+  const recipeIds = requests.flatMap((r) => r.recipes.map((recipe) => recipe.id));
   const { data: feedbackRows } = recipeIds.length
     ? await supabase
         .from("recipe_feedback")
@@ -76,7 +102,8 @@ export default async function RecipesPage({
   return (
     <div className="theme-page" data-app-theme={theme}>
       <div className="container">
-        <AppNav isAdmin={profile.is_admin} />
+        <AppNav isAdmin={profile.is_admin} email={user.email} />
+        <StepIndicator current={3} />
         <h1>레시피 추천</h1>
         <p className="page-subtitle">이번 요청에 한해서만 조건을 바꿔 다시 받아볼 수 있어요.</p>
 
@@ -95,19 +122,38 @@ export default async function RecipesPage({
           />
         )}
 
-        {(recipes ?? []).map((r) => (
-          <RecipeCard
-            key={r.id}
-            recipe={r}
-            initialReaction={
-              (feedbackRows ?? []).find((f) => f.recipe_id === r.id)?.reaction as
-                | "like"
-                | "dislike"
-                | undefined
-            }
-            initialComment={(feedbackRows ?? []).find((f) => f.recipe_id === r.id)?.comment_text ?? ""}
-            initialSaved={(savedRows ?? []).some((s) => s.recipe_id === r.id)}
-          />
+        {requests.map((req, idx) => (
+          <div key={req.id} style={{ marginBottom: 28 }}>
+            <p
+              style={{
+                fontSize: 12,
+                fontWeight: 700,
+                color: "var(--app-muted)",
+                margin: "0 0 10px",
+                textTransform: "uppercase",
+                letterSpacing: "0.03em",
+              }}
+            >
+              {idx === 0 ? "이번 추천" : `이전 추천 · ${dateFormatter.format(new Date(req.created_at))}`}
+            </p>
+            {req.recipes
+              .slice()
+              .sort((a, b) => a.created_at.localeCompare(b.created_at))
+              .map((r) => (
+                <RecipeCard
+                  key={r.id}
+                  recipe={r}
+                  initialReaction={
+                    (feedbackRows ?? []).find((f) => f.recipe_id === r.id)?.reaction as
+                      | "like"
+                      | "dislike"
+                      | undefined
+                  }
+                  initialComment={(feedbackRows ?? []).find((f) => f.recipe_id === r.id)?.comment_text ?? ""}
+                  initialSaved={(savedRows ?? []).some((s) => s.recipe_id === r.id)}
+                />
+              ))}
+          </div>
         ))}
 
         {latestRequest && (

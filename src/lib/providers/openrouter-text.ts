@@ -29,11 +29,11 @@ const TIME_LABEL: Record<string, string> = {
   no_limit: "시간 제한 없음",
 };
 
-function validateRecipes(data: unknown, count: number): RecipeResult[] {
+function validateRecipes(data: unknown, count: number, previousTitles: string[]): RecipeResult[] {
   if (!Array.isArray(data)) {
     throw new OpenRouterError("텍스트 API 응답 형식이 예상과 달라요.");
   }
-  return data
+  const results = data
     .filter((r): r is Record<string, unknown> => !!r && typeof (r as { title?: unknown }).title === "string")
     .slice(0, count)
     .map((r) => ({
@@ -42,6 +42,18 @@ function validateRecipes(data: unknown, count: number): RecipeResult[] {
       steps: Array.isArray(r.steps) ? (r.steps as string[]) : [],
       estTimeMinutes: typeof r.estTimeMinutes === "number" ? r.estTimeMinutes : 20,
     }));
+
+  // 모델이 "이미 추천했으니 피하라"는 지시를 무시하고 직전 제목을 그대로 반복하면,
+  // 다음 fallback 후보(openrouter/free)로 넘어가서 다시 시도해본다.
+  const previousSet = new Set(previousTitles.map((t) => t.trim().toLowerCase()));
+  if (previousSet.size > 0 && results.length > 0) {
+    const repeated = results.filter((r) => previousSet.has(r.title.trim().toLowerCase())).length;
+    if (repeated === results.length) {
+      throw new OpenRouterError("직전에 추천한 레시피와 동일한 결과가 나왔어요.");
+    }
+  }
+
+  return results;
 }
 
 function createProvider(id: string, model: string): TextProvider {
@@ -51,7 +63,7 @@ function createProvider(id: string, model: string): TextProvider {
   return {
     id,
     label: `OpenRouter · ${model} (실제 API, 무료)`,
-    async recommendRecipes({ ingredients, preferences, count }) {
+    async recommendRecipes({ ingredients, preferences, count, previousTitles = [] }) {
       const prefLines = [
         preferences.cuisine && `요리 종류: ${CUISINE_LABEL[preferences.cuisine] ?? preferences.cuisine}`,
         preferences.spiceLevel && `매운맛: ${SPICE_LABEL[preferences.spiceLevel] ?? preferences.spiceLevel}`,
@@ -69,6 +81,9 @@ function createProvider(id: string, model: string): TextProvider {
       const userPrompt =
         `보유 재료: ${ingredients.join(", ") || "(없음)"}\n` +
         (prefLines ? `선호 조건: ${prefLines}\n` : "") +
+        (previousTitles.length > 0
+          ? `이미 추천한 요리(다시 추천하지 마라): ${previousTitles.join(", ")}\n`
+          : "") +
         `레시피를 정확히 ${count}개 추천해줘. 보유 재료를 최대한 활용하는 레시피로 골라줘.`;
 
       const { result } = await chatJsonWithFallback<RecipeResult[]>(
@@ -77,7 +92,7 @@ function createProvider(id: string, model: string): TextProvider {
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
         ],
-        (data) => validateRecipes(data, count)
+        (data) => validateRecipes(data, count, previousTitles)
       );
       return result;
     },

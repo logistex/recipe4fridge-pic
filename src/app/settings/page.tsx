@@ -19,7 +19,7 @@ export default async function SettingsPage({
   return (
     <div className="theme-page" data-app-theme={profile.theme}>
       <div className="container">
-        <AppNav isAdmin={profile.is_admin} />
+        <AppNav isAdmin={profile.is_admin} email={user.email} />
         <h1>설정</h1>
         <p className="page-subtitle">
           {user.email}의 기본 선호 조건과 디자인 테마예요. 레시피 추천 화면에서 이번 요청에

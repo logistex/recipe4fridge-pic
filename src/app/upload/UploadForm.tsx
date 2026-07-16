@@ -4,8 +4,11 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { resizeImage } from "@/lib/image-resize";
 import { createFridgeSession } from "@/lib/fridge/actions";
+import { Spinner } from "@/components/Spinner";
 
 type ProviderOption = { id: string; label: string };
+
+const MAX_PHOTOS = 3;
 
 export function UploadForm({
   userId,
@@ -22,10 +25,25 @@ export function UploadForm({
   const [error, setError] = useState<string | null>(null);
   const [visionProviderId, setVisionProviderId] = useState(defaultProviderId);
 
+  // 파일 입력을 다시 열어도 기존에 골라둔 사진은 유지하고, 새로 고른 사진을
+  // 이어 붙인다(최대 3장). 같은 input을 반복해서 열 수 있도록 매번 값을 비운다.
   function handleFiles(e: React.ChangeEvent<HTMLInputElement>) {
-    const selected = Array.from(e.target.files ?? []).slice(0, 3);
-    setFiles(selected);
-    setPreviews(selected.map((f) => URL.createObjectURL(f)));
+    const picked = Array.from(e.target.files ?? []);
+    e.target.value = "";
+    if (picked.length === 0) return;
+    setFiles((prev) => {
+      const merged = [...prev, ...picked].slice(0, MAX_PHOTOS);
+      setPreviews(merged.map((f) => URL.createObjectURL(f)));
+      return merged;
+    });
+  }
+
+  function handleRemove(index: number) {
+    setFiles((prev) => {
+      const merged = prev.filter((_, i) => i !== index);
+      setPreviews(merged.map((f) => URL.createObjectURL(f)));
+      return merged;
+    });
   }
 
   async function handleSubmit() {
@@ -67,7 +85,9 @@ export function UploadForm({
       if (result?.error) {
         setStatus("error");
         setError(result.error);
+        return;
       }
+      setStatus("idle");
     } catch (err) {
       // 여기로 잡히는 에러는 항상 "예상 못한" 실패다 (예상 가능한 실패는 이미
       // createFridgeSession이 {error}로 정상 반환한다). 이 시점의 에러 메시지는
@@ -84,7 +104,50 @@ export function UploadForm({
 
   return (
     <div className="card" style={{ marginTop: 20 }}>
-      <div style={{ marginBottom: 14 }}>
+      <label className="field-label">냉장고 사진 ({files.length}/{MAX_PHOTOS}장)</label>
+
+      {previews.length > 0 && (
+        <div style={{ display: "flex", gap: 10, marginBottom: 12, flexWrap: "wrap" }}>
+          {previews.map((src, i) => (
+            <div key={i} style={{ position: "relative" }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={src}
+                alt={`업로드 미리보기 ${i + 1}`}
+                width={160}
+                height={160}
+                style={{ objectFit: "cover", borderRadius: 12, border: "1px solid var(--app-line)" }}
+              />
+              <button
+                type="button"
+                onClick={() => handleRemove(i)}
+                aria-label={`사진 ${i + 1} 제거`}
+                className="icon-btn"
+                style={{
+                  position: "absolute",
+                  top: -8,
+                  right: -8,
+                  background: "var(--app-surface)",
+                  boxShadow: "0 1px 4px rgba(0,0,0,0.15)",
+                }}
+              >
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {files.length < MAX_PHOTOS && (
+        <input type="file" accept="image/*" multiple onChange={handleFiles} style={{ width: "100%" }} />
+      )}
+      {files.length >= MAX_PHOTOS && (
+        <p style={{ color: "var(--app-muted)", fontSize: 12 }}>
+          최대 {MAX_PHOTOS}장까지 선택했어요. 다른 사진으로 바꾸려면 먼저 하나를 제거해주세요.
+        </p>
+      )}
+
+      <div style={{ marginTop: 18 }}>
         <label className="field-label">식재료 인식에 쓸 비전 API</label>
         <select
           value={visionProviderId}
@@ -99,30 +162,20 @@ export function UploadForm({
         </select>
       </div>
 
-      <label className="field-label">냉장고 사진</label>
-      <input type="file" accept="image/*" multiple onChange={handleFiles} style={{ width: "100%" }} />
-
-      {previews.length > 0 && (
-        <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-          {previews.map((src, i) => (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              key={i}
-              src={src}
-              alt={`업로드 미리보기 ${i + 1}`}
-              width={100}
-              height={100}
-              style={{ objectFit: "cover", borderRadius: 10, border: "1px solid var(--app-line)" }}
-            />
-          ))}
-        </div>
-      )}
-
       {error && <p style={{ color: "var(--app-error)", fontSize: 14, marginTop: 12 }}>{error}</p>}
 
       {status === "uploading" && (
-        <p style={{ color: "var(--app-muted)", fontSize: 12, marginTop: 8 }}>
-          실제 AI API를 호출 중이라 최대 1분 정도 걸릴 수 있어요.
+        <p
+          style={{
+            color: "var(--app-muted)",
+            fontSize: 12,
+            marginTop: 8,
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+          }}
+        >
+          <Spinner /> 실제 AI API를 호출 중이라 최대 1분 정도 걸릴 수 있어요.
         </p>
       )}
 
@@ -133,7 +186,13 @@ export function UploadForm({
         className="btn-primary btn-block"
         style={{ marginTop: 16 }}
       >
-        {status === "uploading" ? "업로드 중..." : "업로드하고 재료 인식하기"}
+        {status === "uploading" ? (
+          <>
+            <Spinner /> 업로드 중...
+          </>
+        ) : (
+          "업로드하고 재료 인식하기"
+        )}
       </button>
     </div>
   );

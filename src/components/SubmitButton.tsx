@@ -1,6 +1,7 @@
 "use client";
 
 import { useFormStatus } from "react-dom";
+import { Spinner } from "./Spinner";
 
 // 실제 API(OpenRouter) 호출은 최대 1분 가까이 걸릴 수 있어서, 버튼이 멈춘 것처럼
 // 보이지 않도록 제출 중 상태를 보여준다. useFormStatus는 <form> 안에 있는
@@ -19,7 +20,13 @@ export function SubmitButton({
   const { pending } = useFormStatus();
   return (
     <button type="submit" disabled={pending} className={className} style={style}>
-      {pending ? pendingLabel : children}
+      {pending ? (
+        <>
+          <Spinner /> {pendingLabel}
+        </>
+      ) : (
+        children
+      )}
     </button>
   );
 }
