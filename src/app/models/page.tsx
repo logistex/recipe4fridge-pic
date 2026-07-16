@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getCurrentUserAndProfile } from "@/lib/profile/get-current-profile";
 import { getScoreboard, type ScoreboardRow } from "@/lib/ratings/ranking";
+import { visionProviders, textProviders } from "@/lib/providers";
 import { AppNav } from "@/components/AppNav";
 
 const PERIODS: { id: string; label: string; days: number | null }[] = [
@@ -58,11 +59,13 @@ export default async function ModelsPage({
             title="비전 API (사진 품질·재료인식 정확도)"
             description="사진을 업로드한 본인이 평가"
             rows={visionScoreboard}
+            labels={visionProviders}
           />
           <ScoreboardCard
             title="텍스트 API (재료-레시피 정합성)"
             description="레시피를 추천받은 본인이 평가"
             rows={textScoreboard}
+            labels={textProviders}
           />
         </div>
       </div>
@@ -74,10 +77,15 @@ function ScoreboardCard({
   title,
   description,
   rows,
+  labels,
 }: {
   title: string;
   description: string;
   rows: ScoreboardRow[];
+  // 업로드/재료확인 화면 드롭다운과 똑같은 이름으로 보여주기 위해, 내부 provider id를
+  // 사람이 알아보는 label로 바꿔서 표시한다 (레지스트리에 없으면 id를 그대로 보여준다 —
+  // 과거에 쓰였다가 지금은 후보 목록에서 빠진 모델일 수 있어서).
+  labels: Record<string, { label: string }>;
 }) {
   return (
     <div className="card" style={{ flex: "1 1 320px", minWidth: 280 }}>
@@ -91,7 +99,7 @@ function ScoreboardCard({
             <div key={r.providerId} style={{ fontSize: 13 }}>
               <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
                 <span style={{ fontWeight: i === 0 ? 700 : 500 }}>
-                  {i + 1}. {r.providerId}
+                  {i + 1}. {labels[r.providerId]?.label ?? r.providerId}
                 </span>
                 <span style={{ fontWeight: 700, color: "var(--app-accent-strong)" }}>
                   {r.combinedAvg.toFixed(1)}점

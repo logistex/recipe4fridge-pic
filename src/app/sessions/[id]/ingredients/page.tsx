@@ -8,6 +8,7 @@ import { textProviders, DEFAULT_TEXT_PROVIDER } from "@/lib/providers";
 import { rankProviders, sortByRanking } from "@/lib/ratings/ranking";
 import { IngredientEditor } from "./IngredientEditor";
 import { RecognitionRating } from "./RecognitionRating";
+import { PhotoGallery } from "./PhotoGallery";
 
 // 실제 텍스트 API(OpenRouter)는 여러 무료 모델을 순서대로 재시도할 수 있어
 // 기본 서버리스 함수 시간제한보다 오래 걸릴 수 있다 (docs/PRD.md 7.1).
@@ -75,21 +76,7 @@ export default async function IngredientsPage({
         <h1>인식된 재료</h1>
         <p className="page-subtitle">틀린 부분은 고치고, 빠진 재료는 추가해주세요.</p>
 
-        {photoUrls.length > 0 && (
-          <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
-            {photoUrls.map((url, i) => (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                key={i}
-                src={url}
-                alt={`업로드한 냉장고 사진 ${i + 1}`}
-                width={180}
-                height={180}
-                style={{ objectFit: "cover", borderRadius: 12, border: "1px solid var(--app-line)" }}
-              />
-            ))}
-          </div>
-        )}
+        {photoUrls.length > 0 && <PhotoGallery urls={photoUrls} />}
 
         <IngredientEditor sessionId={id} initialIngredients={ingredients ?? []} />
 

@@ -417,6 +417,8 @@
   border-radius: var(--app-radius-sm);
   padding: 12px;
   margin: 16px 0 20px;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .theme-page .pref-bar select {
@@ -425,6 +427,17 @@
   border: 1px solid var(--app-line);
   background: var(--app-bg);
   color: var(--app-text);
+  /* 텍스트 API 옵션처럼 긴 글자가 들어있는 select가 카드 밖으로 튀어나가지 않도록,
+     flex item의 기본 min-width(콘텐츠 크기)를 0으로 풀고 최대폭을 카드 폭으로 제한한다. */
+  min-width: 0;
+  max-width: 100%;
+  flex: 1 1 auto;
+}
+
+/* 텍스트 API처럼 다른 select보다 글자가 훨씬 긴 항목은 혼자 한 줄을 차지하게 해서
+   짧은 select들과 어색하게 나란히 눌리지 않도록 한다. */
+.theme-page .pref-bar select[name="textProvider"] {
+  flex-basis: 100%;
 }
 
 .theme-page .pref-bar button {
