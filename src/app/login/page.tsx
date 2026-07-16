@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { signInWithPassword, signInWithGoogle } from "@/lib/supabase/actions";
+import { BrandMark } from "@/components/Logo";
 
 export default async function LoginPage({
   searchParams,
@@ -11,10 +12,9 @@ export default async function LoginPage({
   return (
     <div className="theme-page" data-app-theme="apricot">
       <main className="container-narrow">
-        <div className="brand-hero">
-          <p className="brand-hero-eyebrow">AI 냉장고 레시피</p>
-          <h1>recipe4fridge_pic</h1>
-        </div>
+        <h1 className="brand-hero">
+          <BrandMark size={32} textSize={24} />
+        </h1>
         <p className="page-subtitle">냉장고 사진으로 레시피를 찾아드려요. 로그인해주세요.</p>
 
         {error && <p style={{ color: "var(--app-error)", fontSize: 14 }}>{decodeURIComponent(error)}</p>}

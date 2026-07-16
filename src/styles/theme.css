@@ -102,21 +102,7 @@
 }
 
 .brand-hero {
-  margin-bottom: var(--space-4);
-}
-
-.brand-hero-eyebrow {
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--app-accent-strong);
-  margin: 0 0 6px;
-}
-
-.brand-hero h1 {
-  font-size: 32px;
-  letter-spacing: -0.02em;
+  margin: 0 0 var(--space-4);
 }
 
 .page-subtitle {

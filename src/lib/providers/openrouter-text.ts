@@ -73,9 +73,15 @@ function createProvider(id: string, model: string): TextProvider {
         .filter(Boolean)
         .join(", ");
 
+      // 요리 종류를 선택 안 했을 때만 한식(가정식)을 기본으로 삼는다 — 예전엔 이 문장이
+      // 항상 고정되어 있어서 양식/중식/일식을 골라도 한식 쪽으로 편향되는 버그가 있었다.
+      const cuisineInstruction = preferences.cuisine
+        ? `너는 냉장고 속 재료로 ${CUISINE_LABEL[preferences.cuisine] ?? preferences.cuisine} 레시피를 추천하는 도우미다.`
+        : "너는 냉장고 속 재료로 만들 수 있는 한국 가정식 레시피를 추천하는 도우미다.";
+
       const systemPrompt =
-        "너는 냉장고 속 재료로 만들 수 있는 한국 가정식 레시피를 추천하는 도우미다. " +
-        "다른 설명 없이 JSON 배열로만 답해라. 형식: " +
+        cuisineInstruction +
+        " 다른 설명 없이 JSON 배열로만 답해라. 형식: " +
         '[{"title":"요리명","ingredients":["재료1","재료2"],"steps":["1단계","2단계"],"estTimeMinutes":15}, ...]';
 
       const userPrompt =

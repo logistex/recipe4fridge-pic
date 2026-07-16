@@ -2,8 +2,10 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getVisionProvider, getTextProvider } from "@/lib/providers";
+import { judgePhotoAndIngredients, judgeRecipeBatch } from "@/lib/providers/judge";
 
 // 짧은 시간에 같은 작업(사진 업로드, 레시피 요청)을 과도하게 반복하지 못하게 막는 간단한 rate limit.
 // 무료 API 한도/비용 남용 방지 목적 (docs/PRD.md 8.1).
@@ -69,10 +71,11 @@ export async function createFridgeSession(input: {
   }
 
   let detected;
+  let signedUrls: string[] = [];
   try {
     // mock provider는 URL 내용을 안 보지만, 실제 API(OpenRouter 등)는 이미지를 직접 가져와야 하므로
     // 비공개 버킷 경로 대신 짧게 유효한 서명된 URL을 만들어 전달한다.
-    const signedUrls = await Promise.all(
+    signedUrls = await Promise.all(
       input.images.map(async (img) => {
         const { data, error } = await supabase.storage
           .from("fridge-images")
@@ -111,6 +114,38 @@ export async function createFridgeSession(input: {
     .from("detected_ingredients")
     .insert(ingredientRows);
   if (ingredientsError) throw new Error(ingredientsError.message);
+
+  // 사진/재료인식 품질에 대한 AI 판정은 사용자가 다음 화면으로 넘어간 뒤에(응답을 막지
+  // 않고) 백그라운드로 돌린다 — 새로 만든 세션은 public_consent 기본값(true)이라 별도
+  // 동의 확인 없이 평가 대상이 된다.
+  after(async () => {
+    const verdict = await judgePhotoAndIngredients({
+      imageUrls: signedUrls,
+      ingredientNames: detected.map((d) => d.name),
+    });
+    if (!verdict) return;
+    const { error } = await supabase.from("model_ratings").insert([
+      {
+        subject_type: "photo",
+        session_id: input.sessionId,
+        provider_id: visionProvider.id,
+        source: "ai_judge",
+        user_id: user.id,
+        score: verdict.photoScore,
+        note: verdict.note ?? null,
+      },
+      {
+        subject_type: "ingredients",
+        session_id: input.sessionId,
+        provider_id: visionProvider.id,
+        source: "ai_judge",
+        user_id: user.id,
+        score: verdict.ingredientsScore,
+        note: verdict.note ?? null,
+      },
+    ]);
+    if (error) console.error("AI 판정 저장 실패(사진/재료인식):", error.message);
+  });
 
   redirect(`/sessions/${input.sessionId}/ingredients`);
 }
@@ -274,6 +309,25 @@ export async function requestRecipes(
   if (recipesError) throw new Error(recipesError.message);
   // 호출하는 쪽(더 보기 / 조건 재요청 폼)에서 redirect()로 새로고침을 보장하므로
   // 여기서는 revalidatePath를 호출하지 않는다 (렌더링 중 호출 시 Next.js가 에러를 던짐).
+
+  // 레시피 품질에 대한 AI 판정도 응답을 막지 않고 백그라운드로 돌린다.
+  after(async () => {
+    const verdict = await judgeRecipeBatch({
+      ingredientNames: ingredients,
+      recipes: results.map((r) => ({ title: r.title, ingredients: r.ingredients, steps: r.steps })),
+    });
+    if (!verdict) return;
+    const { error } = await supabase.from("model_ratings").insert({
+      subject_type: "recipe",
+      request_id: request.id,
+      provider_id: textProvider.id,
+      source: "ai_judge",
+      user_id: user.id,
+      score: verdict.score,
+      note: verdict.note ?? null,
+    });
+    if (error) console.error("AI 판정 저장 실패(레시피):", error.message);
+  });
 }
 
 export async function setRecipeFeedback(recipeId: string, reaction: "like" | "dislike") {
@@ -328,6 +382,41 @@ export async function toggleSaveRecipe(recipeId: string, save: boolean) {
       .eq("recipe_id", recipeId);
     if (error) throw new Error(error.message);
   }
+}
+
+export async function rateRecognition(sessionId: string, score: number) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const { data: session } = await supabase
+    .from("fridge_sessions")
+    .select("vision_provider")
+    .eq("id", sessionId)
+    .maybeSingle();
+  if (!session) return;
+
+  // 같은 사람이 다시 평가하면 이전 것을 지우고 새로 남긴다 (집계에 중복 반영 방지).
+  await supabase
+    .from("model_ratings")
+    .delete()
+    .eq("session_id", sessionId)
+    .eq("user_id", user.id)
+    .eq("subject_type", "ingredients")
+    .eq("source", "user");
+
+  const { error } = await supabase.from("model_ratings").insert({
+    subject_type: "ingredients",
+    session_id: sessionId,
+    provider_id: session.vision_provider,
+    source: "user",
+    user_id: user.id,
+    score: Math.max(1, Math.min(5, Math.round(score))),
+  });
+  if (error) throw new Error(error.message);
+  revalidatePath(`/sessions/${sessionId}/ingredients`);
 }
 
 export async function deleteFridgeSession(sessionId: string) {

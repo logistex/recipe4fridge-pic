@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { getCurrentUserAndProfile } from "@/lib/profile/get-current-profile";
 import { requestRecipes } from "@/lib/fridge/actions";
 import { textProviders, DEFAULT_TEXT_PROVIDER } from "@/lib/providers";
+import { rankProviders, sortByRanking } from "@/lib/ratings/ranking";
 import { AppNav } from "@/components/AppNav";
 import { SubmitButton } from "@/components/SubmitButton";
 import { StepIndicator } from "@/components/StepIndicator";
@@ -99,10 +100,14 @@ export default async function RecipesPage({
     ? await supabase.from("saved_recipes").select("recipe_id").eq("user_id", user.id).in("recipe_id", recipeIds)
     : { data: [] as { recipe_id: string }[] };
 
+  const textRanking = await rankProviders(supabase, ["recipe"]);
+  const sortedTextProviders = sortByRanking(Object.values(textProviders), textRanking);
+  const defaultTextProviderId = sortedTextProviders[0]?.id ?? DEFAULT_TEXT_PROVIDER;
+
   return (
     <div className="theme-page" data-app-theme={theme}>
       <div className="container">
-        <AppNav isAdmin={profile.is_admin} email={user.email} />
+        <AppNav email={user.email} />
         <StepIndicator current={3} />
         <h1>레시피 추천</h1>
         <p className="page-subtitle">이번 요청에 한해서만 조건을 바꿔 다시 받아볼 수 있어요.</p>
@@ -117,8 +122,8 @@ export default async function RecipesPage({
           <OverrideForm
             sessionId={id}
             defaults={latestRequest}
-            providers={Object.values(textProviders).map((p) => ({ id: p.id, label: p.label }))}
-            defaultProviderId={DEFAULT_TEXT_PROVIDER}
+            providers={sortedTextProviders.map((p) => ({ id: p.id, label: p.label }))}
+            defaultProviderId={defaultTextProviderId}
           />
         )}
 

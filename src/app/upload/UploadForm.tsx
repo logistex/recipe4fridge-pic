@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { resizeImage } from "@/lib/image-resize";
 import { createFridgeSession } from "@/lib/fridge/actions";
@@ -24,6 +24,21 @@ export function UploadForm({
   const [status, setStatus] = useState<"idle" | "uploading" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
   const [visionProviderId, setVisionProviderId] = useState(defaultProviderId);
+
+  // 브라우저 뒤로가기로 이 페이지에 돌아오면, Next.js가 예전 화면(실패했을 때의 에러
+  // 문구까지 포함해서)을 캐시에서 그대로 복원해 보여줄 때가 있다 — 실제로는 이미 그
+  // 시도가 성공해서 다음 단계로 넘어갔었는데도 옛날 에러가 다시 보이는 원인이다.
+  // pageshow의 persisted 플래그로 이런 "캐시에서 복원됨" 상황을 감지해서 초기화한다.
+  useEffect(() => {
+    function handlePageShow(event: PageTransitionEvent) {
+      if (event.persisted) {
+        setStatus("idle");
+        setError(null);
+      }
+    }
+    window.addEventListener("pageshow", handlePageShow);
+    return () => window.removeEventListener("pageshow", handlePageShow);
+  }, []);
 
   // 파일 입력을 다시 열어도 기존에 골라둔 사진은 유지하고, 새로 고른 사진을
   // 이어 붙인다(최대 3장). 같은 input을 반복해서 열 수 있도록 매번 값을 비운다.

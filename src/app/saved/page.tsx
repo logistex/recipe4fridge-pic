@@ -36,7 +36,7 @@ export default async function SavedRecipesPage() {
   return (
     <div className="theme-page" data-app-theme={profile.theme}>
       <div className="container">
-        <AppNav isAdmin={profile.is_admin} email={user.email} />
+        <AppNav email={user.email} />
         <h1>저장한 레시피</h1>
         <p className="page-subtitle">
           &ldquo;저장&rdquo; 버튼을 눌렀던 레시피 목록이에요. 저장 취소하면 이 목록에서 빠져요.

@@ -5,7 +5,9 @@ import { SubmitButton } from "@/components/SubmitButton";
 import { StepIndicator } from "@/components/StepIndicator";
 import { requestRecipes } from "@/lib/fridge/actions";
 import { textProviders, DEFAULT_TEXT_PROVIDER } from "@/lib/providers";
+import { rankProviders, sortByRanking } from "@/lib/ratings/ranking";
 import { IngredientEditor } from "./IngredientEditor";
+import { RecognitionRating } from "./RecognitionRating";
 
 // 실제 텍스트 API(OpenRouter)는 여러 무료 모델을 순서대로 재시도할 수 있어
 // 기본 서버리스 함수 시간제한보다 오래 걸릴 수 있다 (docs/PRD.md 7.1).
@@ -50,10 +52,25 @@ export default async function IngredientsPage({
     )
   ).filter((url): url is string => !!url);
 
+  const { data: myRating } = await supabase
+    .from("model_ratings")
+    .select("score")
+    .eq("session_id", id)
+    .eq("user_id", user.id)
+    .eq("subject_type", "ingredients")
+    .eq("source", "user")
+    .maybeSingle();
+
+  // 레시피 품질 평가(사용자 좋아요/싫어요 + AI 판정)가 충분히 쌓인 텍스트 모델은
+  // 점수 높은 순으로 위쪽에, 기본 선택값도 그 모델로 자동 반영한다.
+  const textRanking = await rankProviders(supabase, ["recipe"]);
+  const sortedTextProviders = sortByRanking(Object.values(textProviders), textRanking);
+  const defaultTextProviderId = sortedTextProviders[0]?.id ?? DEFAULT_TEXT_PROVIDER;
+
   return (
     <div className="theme-page" data-app-theme={profile.theme}>
       <div className="container">
-        <AppNav isAdmin={profile.is_admin} email={user.email} />
+        <AppNav email={user.email} />
         <StepIndicator current={2} />
         <h1>인식된 재료</h1>
         <p className="page-subtitle">틀린 부분은 고치고, 빠진 재료는 추가해주세요.</p>
@@ -75,6 +92,8 @@ export default async function IngredientsPage({
         )}
 
         <IngredientEditor sessionId={id} initialIngredients={ingredients ?? []} />
+
+        <RecognitionRating sessionId={id} initialScore={myRating?.score ?? null} />
 
         {errorParam && (
           <p style={{ color: "var(--app-error)", fontSize: 13, marginTop: 8 }}>
@@ -133,8 +152,8 @@ export default async function IngredientsPage({
           </div>
 
           <label className="field-label">레시피 추천에 쓸 텍스트 API</label>
-          <select name="textProvider" defaultValue={DEFAULT_TEXT_PROVIDER} style={{ width: "100%", marginBottom: 16 }}>
-            {Object.values(textProviders).map((p) => (
+          <select name="textProvider" defaultValue={defaultTextProviderId} style={{ width: "100%", marginBottom: 16 }}>
+            {sortedTextProviders.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.label}
               </option>

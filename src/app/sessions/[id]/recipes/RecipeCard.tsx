@@ -17,11 +17,17 @@ export function RecipeCard({
   initialReaction,
   initialComment,
   initialSaved,
+  aggregate,
+  otherComments,
 }: {
   recipe: Recipe;
   initialReaction?: "like" | "dislike";
   initialComment: string;
   initialSaved: boolean;
+  // 레시피 평가 집계 화면에서만 넘어온다 — 나(개인)의 반응과 별개로, 전체 회원의
+  // 좋아요/싫어요 합계를 보여주기 위함이다.
+  aggregate?: { likes: number; dislikes: number };
+  otherComments?: { reaction: "like" | "dislike"; text: string }[];
 }) {
   const [reaction, setReaction] = useState(initialReaction);
   const [saved, setSaved] = useState(initialSaved);
@@ -76,6 +82,11 @@ export function RecipeCard({
         </div>
       </div>
       <p className="recipe-card-ingredients">{recipe.ingredients_json.join(", ")}</p>
+      {aggregate && (
+        <p style={{ fontSize: 12, color: "var(--app-muted)", margin: "-4px 0 8px" }}>
+          전체 반응 · 좋아요 {aggregate.likes} · 싫어요 {aggregate.dislikes}
+        </p>
+      )}
       <ol style={{ fontSize: 13, color: "var(--app-text)", paddingLeft: 18, marginBottom: 12 }}>
         {recipe.steps_json.map((step, i) => (
           <li key={i}>{step}</li>
@@ -124,6 +135,16 @@ export function RecipeCard({
           <p style={{ fontSize: 11, color: "var(--app-muted)", marginTop: 4 }}>저장됐어요.</p>
         )}
       </div>
+
+      {otherComments && otherComments.length > 0 && (
+        <ul style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid var(--app-line)", fontSize: 12, color: "var(--app-muted)", display: "flex", flexDirection: "column", gap: 4 }}>
+          {otherComments.map((c, i) => (
+            <li key={i}>
+              [{c.reaction === "like" ? "좋아요" : "싫어요"}] {c.text}
+            </li>
+          ))}
+        </ul>
+      )}
     </article>
   );
 }

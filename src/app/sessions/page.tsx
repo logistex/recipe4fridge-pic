@@ -35,7 +35,7 @@ export default async function SessionsPage() {
   return (
     <div className="theme-page" data-app-theme={profile.theme}>
       <div className="container">
-        <AppNav isAdmin={profile.is_admin} email={user.email} />
+        <AppNav email={user.email} />
         <h1>이전 재료로 다시 추천받기</h1>
         <p className="page-subtitle">
           예전에 인식했던 재료로 바로 새 레시피를 받아볼 수 있어요. 사진을 다시 올릴 필요 없어요.

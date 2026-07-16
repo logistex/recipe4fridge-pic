@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { AppNav } from "@/components/AppNav";
+import { BrandMark, BRAND_TAGLINE } from "@/components/Logo";
 
 export default async function Home() {
   const supabase = await createClient();
@@ -12,9 +13,11 @@ export default async function Home() {
     return (
       <div className="theme-page" data-app-theme="apricot">
         <main className="container">
-          <h1>recipe4fridge_pic</h1>
+          <h1 className="brand-hero">
+            <BrandMark size={32} textSize={22} />
+          </h1>
           <p className="page-subtitle" style={{ marginBottom: 20 }}>
-            냉장고 사진 한 장으로 오늘 만들 수 있는 레시피를 찾아드려요.
+            {BRAND_TAGLINE}
           </p>
           <div style={{ display: "flex", gap: 10 }}>
             <Link href="/login" className="btn btn-primary">
@@ -45,11 +48,9 @@ export default async function Home() {
   return (
     <div className="theme-page" data-app-theme={theme}>
       <div className="container">
-        <AppNav isAdmin={profile?.is_admin} email={user.email} />
-        <h1>recipe4fridge_pic</h1>
-        <p className="page-subtitle" style={{ marginBottom: 20 }}>
-          <strong style={{ color: "var(--app-text)" }}>{user.email}</strong>님으로 로그인되어 있어요.
-        </p>
+        <AppNav email={user.email} />
+        <h1>오늘은 뭘 만들어볼까요?</h1>
+        <p className="page-subtitle">{BRAND_TAGLINE}</p>
 
         {!sessionCount && (
           <div className="card" style={{ marginBottom: 16 }}>
