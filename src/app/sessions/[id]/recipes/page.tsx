@@ -8,6 +8,7 @@ import { SubmitButton } from "@/components/SubmitButton";
 import { StepIndicator } from "@/components/StepIndicator";
 import { RecipeCard } from "./RecipeCard";
 import { OverrideForm } from "./OverrideForm";
+import { RecipeRelevanceRating } from "./RecipeRelevanceRating";
 
 // 실제 텍스트 API(OpenRouter)는 여러 무료 모델을 순서대로 재시도할 수 있어
 // 기본 서버리스 함수 시간제한보다 오래 걸릴 수 있다 (docs/PRD.md 7.1).
@@ -104,6 +105,17 @@ export default async function RecipesPage({
   const sortedTextProviders = sortByRanking(Object.values(textProviders), textRanking);
   const defaultTextProviderId = sortedTextProviders[0]?.id ?? DEFAULT_TEXT_PROVIDER;
 
+  const requestIds = requests.map((r) => r.id);
+  const { data: relevanceRows } = requestIds.length
+    ? await supabase
+        .from("model_ratings")
+        .select("request_id, score")
+        .eq("user_id", user.id)
+        .eq("subject_type", "recipe")
+        .eq("source", "user")
+        .in("request_id", requestIds)
+    : { data: [] as { request_id: string; score: number }[] };
+
   return (
     <div className="theme-page" data-app-theme={theme}>
       <div className="container">
@@ -141,6 +153,10 @@ export default async function RecipesPage({
             >
               {idx === 0 ? "이번 추천" : `이전 추천 · ${dateFormatter.format(new Date(req.created_at))}`}
             </p>
+            <RecipeRelevanceRating
+              requestId={req.id}
+              initialScore={(relevanceRows ?? []).find((r) => r.request_id === req.id)?.score ?? null}
+            />
             {req.recipes
               .slice()
               .sort((a, b) => a.created_at.localeCompare(b.created_at))

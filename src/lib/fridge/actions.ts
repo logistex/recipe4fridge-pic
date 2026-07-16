@@ -419,6 +419,43 @@ export async function rateRecognition(sessionId: string, score: number) {
   revalidatePath(`/sessions/${sessionId}/ingredients`);
 }
 
+// 텍스트 모델(레시피 추천) 평가 — 좋아요/싫어요(레시피 인기투표)와는 별개의 축이다.
+// "이 레시피 묶음이 보유 재료를 얼마나 잘 활용했는지"를 추천받은 본인이 배치(요청) 단위로
+// 한 번 평가하고, 이 점수가 텍스트 모델 품질 집계에 쓰인다.
+export async function rateRecipeRelevance(requestId: string, score: number) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const { data: request } = await supabase
+    .from("recipe_requests")
+    .select("id, session_id, text_provider")
+    .eq("id", requestId)
+    .maybeSingle();
+  if (!request) return;
+
+  await supabase
+    .from("model_ratings")
+    .delete()
+    .eq("request_id", requestId)
+    .eq("user_id", user.id)
+    .eq("subject_type", "recipe")
+    .eq("source", "user");
+
+  const { error } = await supabase.from("model_ratings").insert({
+    subject_type: "recipe",
+    request_id: requestId,
+    provider_id: request.text_provider,
+    source: "user",
+    user_id: user.id,
+    score: Math.max(1, Math.min(5, Math.round(score))),
+  });
+  if (error) throw new Error(error.message);
+  revalidatePath(`/sessions/${request.session_id}/recipes`);
+}
+
 export async function deleteFridgeSession(sessionId: string) {
   const supabase = await createClient();
   const {
